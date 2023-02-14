@@ -140,7 +140,7 @@ class viagem:
     return response_message(status=200, message="Viagem deletada com sucesso").get_dict()
 
   def get_all(self):
-    with self.connection as connection:
+    with sql.connect(self.database_url) as connection:
       cursor = connection.cursor()
       cursor.execute(f'''
         SELECT * FROM {self.table_name}
