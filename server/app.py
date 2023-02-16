@@ -4,17 +4,20 @@ from database.classes.linha_instance import linha
 from database.classes.viagem_instance import viagem
 from database.classes.parada_instance import parada
 from database.classes.reserva_instance import reserva
-from database.initdb import db_config
 
-db_config()
+from database.db_global import global_functions
+
 banco = 'database.db'
 
 app = Flask(__name__)
 
+db_global = global_functions(banco)
 db_linha = linha(banco)
 db_viagem = viagem(banco)
 db_parada = parada(banco)
 db_reserva = reserva(banco)
+
+db_global.db_config()
 
 @app.route("/")
 def index():
@@ -66,6 +69,9 @@ def get_viagem():
   if req.args.get('id'):
     result = db_viagem.get(req.args.get('id'))
     return res(jsonify(result), result['status'])
+  if req.args.get('linha'):
+    result = db_viagem.get_where('id_linha', '=', req.args.get('linha'))
+    return res(jsonify(result), result['status'])
 
   result = db_viagem.get_all()
   return result
@@ -102,6 +108,9 @@ def get_parada():
   if req.args.get('id'):
     result = db_parada.get(req.args.get('id'))
     return res(jsonify(result), result['status'])
+  if req.args.get('linha'):
+    result = db_parada.get_where('id_linha', '=', req.args.get('linha'))
+    return res(jsonify(result), result['status'])
 
   result = db_parada.get_all()
   return res(jsonify(result), result['status'])
@@ -131,12 +140,13 @@ def delete_parada():
 
   return res(jsonify(result), result['status'])
 
-# Reservas
-
 @app.route('/reserva', methods=['GET'])
 def get_reserva():
   if req.args.get('id'):
     result = db_reserva.get(req.args.get('id'))
+    return res(jsonify(result), result['status'])
+  if req.args.get('viagem'):
+    result = db_reserva.get_where('id_viagem', '=', req.args.get('viagem'))
     return res(jsonify(result), result['status'])
 
   result = db_reserva.get_all()

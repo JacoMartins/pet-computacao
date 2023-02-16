@@ -1,6 +1,7 @@
 from datetime import datetime
 import sqlite3 as sql
 
+from database.db_global import global_functions
 from database.schemas import schema_reserva
 from utils.response_message import response_message
 
@@ -10,6 +11,19 @@ class reserva:
     self.table_name = 'reserva'
 
   def insert(self, data):
+    viagem_exists = global_functions(self.database_url).select({
+      'attribute': 'id',
+      'from': 'viagem',
+      'where': {
+        'column': 'id',
+        'operator': '=',
+        'value': data['id_viagem']
+      }
+    })
+
+    if not viagem_exists:
+      return response_message(status=404, message="Impossível criar reserva: Viagem não encontrada").get_dict()
+
     result = schema_reserva(
       id_viagem=data['id_viagem'],
       assento=data['assento'],
@@ -27,6 +41,8 @@ class reserva:
           '{result['atualizado_em']}'
           );
         ''')
+
+      result['id'] = cursor.lastrowid
     
     return response_message(status=200, message='Reserva criada com sucesso', data=result).get_dict()
   
@@ -53,33 +69,97 @@ class reserva:
 
       return response_message(status=200, message='Reserva encontrada com sucesso', data=result).get_dict()
 
+  def get_all(self):
+    with sql.connect(self.database_url) as connection:
+      cursor = connection.cursor()
+      cursor.execute(f'''
+        SELECT * FROM {self.table_name}
+        ''')
+
+      data = cursor.fetchall()
+
+      if len(data) == 0:
+        return response_message(status=200, message="Nenhuma reserva encontrada").get_dict()
+      elif not data:
+        return response_message(status=500, message="Ocorrou um erro interno.").get_dict()
+
+      result = [schema_reserva(
+        id=i[0],
+        id_viagem=i[1],
+        assento=i[2],
+        criado_em=i[3],
+        atualizado_em=i[4]
+      ).get_dict() for i in data]
+
+    return response_message(status=200, message=f"{len(result)} reservas encontradas com sucesso", data=result).get_dict()
+
+  def get_where(self, column, operator, value):
+    with sql.connect(self.database_url) as connection:
+      cursor = connection.cursor()
+      
+      queries = [
+        f'''
+        SELECT * FROM {self.table_name}
+        WHERE {column} {operator} {value};
+        '''
+      ]
+
+      try:
+        for query in queries:
+          cursor.execute(query)
+      except sql.OperationalError as error:
+        return response_message(status=500, message=f"Erro na query: {error}").get_dict()
+      
+      data = cursor.fetchall()
+
+      if len(data) == 0:
+        return response_message(status=200, message="Nenhuma reserva encontrada").get_dict()
+      elif not data:
+        return response_message(status=500, message="Ocorrou um erro interno.").get_dict()
+
+      result = [schema_reserva(
+        id=i[0],
+        id_viagem=i[1],
+        assento=i[2],
+        criado_em=i[3],
+        atualizado_em=i[4]
+      ).get_dict() for i in data]
+      
+      return response_message(status=200, message=f"{len(result)} reservas encontradas", data=result).get_dict()
+      
   def update(self, id, data):
-    schemed_data = {
-        'id_viagem': data['id_viagem'],
-        'assento': data['assento'],
-        'atualizado_em': datetime.now()
-    }
+    try:
+      reserva_exists = self.get(id)['data']
+    except KeyError:
+      return response_message(status=404, message="Impossível realizar ação: Reserva não encontrada").get_dict()
+
+    result = schema_reserva(
+      id_viagem=data['id_viagem'],
+      assento=data['assento'],
+      criado_em=reserva_exists['criado_em'],
+      atualizado_em=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ).get_dict()
+
     with sql.connect(self.database_url) as connection:
       cursor = connection.cursor()
       cursor.execute(f'''
         UPDATE {self.table_name}
-        SET id_viagem = {schemed_data['id_viagem']},
-        assento = {schemed_data['assento']},
-        atualizado_em = '{schemed_data['atualizado_em']}'
+        SET id_viagem = {result['id_viagem']},
+        assento = {result['assento']},
+        atualizado_em = '{result['atualizado_em']}'
         WHERE id = {id}
         ''')
 
-    result = schema_reserva(
-      id=id,
-      id_viagem=data['id_viagem'],
-      assento=data['assento'],
-      criado_em=data['criado_em'],
-      atualizado_em=data['atualizado_em']
-    ).get_dict()
+    result['id'] = int(id)
 
     return response_message(status=200, message='Reserva atualizada com sucesso', data=result).get_dict()
 
   def delete(self, id):
+    try:
+      result = self.get(id)['data']
+    except KeyError:
+      return response_message(status=404, message="Impossível realizar ação: Reserva não encontrada").get_dict()
+
     with sql.connect(self.database_url) as connection:
       cursor = connection.cursor()
 
@@ -93,55 +173,4 @@ class reserva:
       for query in queries:
         cursor.execute(query)
 
-    return response_message(status=204, message="Parada deletada com sucesso").get_dict()
-
-  def get_all(self):
-    with sql.connect(self.database_url) as connection:
-      cursor = connection.cursor()
-      cursor.execute(f'''
-        SELECT * FROM {self.table_name}
-        ''')
-
-      data = cursor.fetchall()
-
-      if len(data) == 0:
-        return response_message(status=200, message="Nenhuma linha encontrada").get_dict()
-      elif not data:
-        return response_message(status=500, message="Ocorrou um erro interno.").get_dict()
-
-      result = [schema_reserva(
-        id=i[0],
-        id_viagem=i[1],
-        assento=i[2],
-        criado_em=i[3],
-        atualizado_em=i[4]
-      ).get_dict() for i in data]
-
-    return response_message(status=200, message='Reservas encontradas com sucesso', data=result).get_dict()
-
-  def get_where(self, column, operator, value):
-    with sql.connect(self.database_url) as connection:
-      cursor = connection.cursor()
-      
-      queries = [
-        f'''
-        SELECT FROM TABLE {self.table_name}
-        WHERE {column} {operator} {value};
-        '''
-      ]
-
-      for query in queries:
-        cursor.execute(query)
-      
-      data = cursor.fetchall()
-
-      result = [schema_reserva(
-        id=i[0],
-        id_viagem=i[1],
-        assento=i[2],
-        criado_em=i[3],
-        atualizado_em=i[4]
-      ).get_dict() for i in data]
-      
-      return response_message(status=200, message="Paradas encontradas", data=result).get_dict()
-      
+    return response_message(status=204, message="Parada deletada com sucesso", data=result).get_dict()
