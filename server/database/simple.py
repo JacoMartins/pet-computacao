@@ -28,13 +28,17 @@ class create_schema:
       if key not in fields:
         raise Exception(f'Key {key} not in schema')
 
-    def create_dict(self, args:list):
+    def create_dict(self, args:list, select_fields:list=None):
       fields = self.fields
 
       dict = {}
       
-      for i in range(len(args)):
-        dict[list(fields.keys())[i]] = args[i]
+      if not select_fields:
+        for i in range(len(args)):
+          dict[list(fields.keys())[i]] = args[i]
+      else:
+        for i in range(len(select_fields)):
+          dict[select_fields[i]] = args[i]
 
       self.validate(**dict)
         
@@ -101,13 +105,25 @@ class create_schema:
 
     # SELECT ALL
 
-    def select_all(self):
+    def select_all(self, **kwargs):
       fields = self.fields
+
+      try: select_fields = kwargs.get('select_fields')
+      except: select_fields = None
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'SELECT * FROM {self.table_name};'
+        sql = f'SELECT '
+
+        if select_fields:
+          for field in select_fields:
+            sql += f'{field}, '
+          sql = sql[:-2] + ' '
+        else:
+          sql += '* '
+        
+        sql += f'FROM {self.table_name};'
 
         cursor.execute(sql)
 
@@ -132,21 +148,28 @@ class create_schema:
     def select_one(self, **kwargs):
       fields = self.fields
       
-      try:
-        where = kwargs.get('where')
-      except:
-        where = None
+      try: where = kwargs.get('where')
+      except: where = None
 
-      try:
-        if where['field'] and where['operator'] and sqlDataType(where['value']):
-          self.validate_field(where['field'])
-      except:
-        pass
+      try: select_fields = kwargs.get('select_fields')
+      except: select_fields = None
+
+      try: self.validate_field(where['field']) if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+      except: pass
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'SELECT * FROM {self.table_name} WHERE '
+        sql = f'SELECT '
+
+        if select_fields:
+          for field in select_fields:
+            sql += f'{field}, '
+          sql = sql[:-2] + ' '
+        else:
+          sql += '* '
+        
+        sql += f'FROM {self.table_name} WHERE '
 
         for key, keyTypes in fields.items():
           try:
@@ -179,7 +202,7 @@ class create_schema:
 
         try: sql = sql[:-1] + ';' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
         except: pass
-
+        
         cursor.execute(sql)
 
         return cursor.fetchone()
@@ -189,21 +212,28 @@ class create_schema:
     def select_many(self, **kwargs):
       fields = self.fields
 
-      try:
-        where = kwargs.get('where')
-      except:
-        where = None
+      try: where = kwargs.get('where')
+      except: where = None
 
-      try:
-        if where['field'] and where['operator'] and sqlDataType(where['value']):
-          self.validate_field(where['field'])
-      except:
-        pass
+      try: select_fields = kwargs.get('select_fields')
+      except: select_fields = None
+
+      try: self.validate_field(where['field']) if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+      except: pass
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'SELECT * FROM {self.table_name} WHERE '
+        sql = f'SELECT '
+
+        if select_fields:
+          for field in select_fields:
+            sql += f'{field}, '
+          sql = sql[:-2] + ' '
+        else:
+          sql += '* '
+        
+        sql += f'FROM {self.table_name} WHERE '
 
         for key, keyTypes in fields.items():
           try:
@@ -422,8 +452,8 @@ class create_schema:
 
     # GET
 
-    def get_all(self):
-      result = [self.create_dict(row) for row in self.select_all()]
+    def get_all(self, **kwargs):
+      result = [self.create_dict(row, **kwargs) for row in self.select_all(**kwargs)]
       
       if len(result) == 0:
         return response_message(status=200, message='Nada encontrado.', data=result).get_dict()
@@ -438,7 +468,7 @@ class create_schema:
       if data == None:
         return response_message(status=404, message='Não encontrado.').get_dict()
 
-      result = self.create_dict(data)
+      result = self.create_dict(data, select_fields=kwargs.get('select_fields'))
 
       return response_message(status=200, message='1 objeto foi encontrado com sucesso.', data=result).get_dict()
     
@@ -453,7 +483,7 @@ class create_schema:
       return response_message(status=200, message='1 objeto foi encontrado com sucesso.', data=result).get_dict()
 
     def get_many(self, **kwargs):
-      result = [self.create_dict(row) for row in self.select_many(**kwargs)]
+      result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(**kwargs)]
 
       if len(result) == 0:
         return response_message(status=200, message='Nada encontrado.', data=result).get_dict()
