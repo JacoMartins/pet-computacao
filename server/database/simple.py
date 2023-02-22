@@ -99,7 +99,7 @@ class create_schema:
 
       return response_message(status=200, message=f'Objeto inserido com sucesso.', data=self.get_last()).get_dict()
 
-    # SELECT
+    # SELECT ALL
 
     def select_all(self):
       fields = self.fields
@@ -113,6 +113,8 @@ class create_schema:
 
         return cursor.fetchall()
 
+    # SELECT LAST
+
     def select_last(self):
       fields = self.fields
 
@@ -125,11 +127,21 @@ class create_schema:
 
         return cursor.fetchone()
 
+    # SELECT ONE
+
     def select_one(self, **kwargs):
       fields = self.fields
-      where = kwargs.get('where')
+      
+      try:
+        where = kwargs.get('where')
+      except:
+        where = None
 
-      self.validate_field(where['field'])
+      try:
+        if where['field'] and where['operator'] and sqlDataType(where['value']):
+          self.validate_field(where['field'])
+      except:
+        pass
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
@@ -137,20 +149,56 @@ class create_schema:
         sql = f'SELECT * FROM {self.table_name} WHERE '
 
         for key, keyTypes in fields.items():
-          if key == where['field']:
-            sql += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
+          try:
+            if key == where['field'] and (where['field'] and where['operator'] and sqlDataType(where['value'])):
+              sql += f"{where['field']} {where['operator']} {sqlDataType(where['value'])} "
+          except:
+            pass
+        
+          try: 
+            if where['AND']:
+              for condition in where['AND']:
+                if key == condition['field']:
+                  sql += f"{condition['field']} {condition['operator']} {sqlDataType(condition['value'])} AND "
+          except:
+            pass
+          
+          try:
+            if where['OR']:
+              for condition in where['OR']:
+                if key == condition['field']:
+                  sql += f"{condition['field']} {condition['operator']} {sqlDataType(condition['value'])} OR "
+          except:
+            pass
 
-        sql = sql[:-2] + ';'
+        try: sql = sql[:-5] + ';' if where['AND'] else None
+        except: pass
+
+        try: sql = sql[:-4] + ';' if where['OR'] else None
+        except: pass
+
+        try: sql = sql[:-1] + ';' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+        except: pass
 
         cursor.execute(sql)
 
         return cursor.fetchone()
 
+    # SELECT MANY
+
     def select_many(self, **kwargs):
       fields = self.fields
-      where = kwargs.get('where')
 
-      self.validate_field(where['field'])
+      try:
+        where = kwargs.get('where')
+      except:
+        where = None
+
+      try:
+        if where['field'] and where['operator'] and sqlDataType(where['value']):
+          self.validate_field(where['field'])
+      except:
+        pass
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
@@ -158,10 +206,36 @@ class create_schema:
         sql = f'SELECT * FROM {self.table_name} WHERE '
 
         for key, keyTypes in fields.items():
-          if key == where['field']:
-            sql += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
+          try:
+            if key == where['field'] and (where['field'] and where['operator'] and sqlDataType(where['value'])):
+              sql += f"{where['field']} {where['operator']} {sqlDataType(where['value'])} "
+          except:
+            pass
 
-        sql = sql[:-2] + ';'
+          try: 
+            if where['AND']:
+              for condition in where['AND']:
+                if key == condition['field']:
+                  sql += f"{condition['field']} {condition['operator']} {sqlDataType(condition['value'])} AND "
+          except:
+            pass
+          
+          try:
+            if where['OR']:
+              for condition in where['OR']:
+                if key == condition['field']:
+                  sql += f"{condition['field']} {condition['operator']} {sqlDataType(condition['value'])} OR "
+          except:
+            pass
+
+        try: sql = sql[:-5] + ';' if where['AND'] else None
+        except: pass
+
+        try: sql = sql[:-4] + ';' if where['OR'] else None
+        except: pass
+
+        try: sql = sql[:-1] + ';' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+        except: pass
 
         cursor.execute(sql)
 
