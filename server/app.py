@@ -163,13 +163,34 @@ def delete_viagem():
 @app.route('/parada', methods=['GET'])
 def get_parada():
   if req.args.get('id'):
-    result = db_parada.get(req.args.get('id'))
-    return res(jsonify(result), result['status'])
-  if req.args.get('linha'):
-    result = db_parada.get_where('id_linha', '=', req.args.get('linha'))
+    result = simple.parada.get_one(where={
+      'field': 'id',
+      'operator': '=',
+      'value': req.args.get('id')
+    })
+
     return res(jsonify(result), result['status'])
 
-  result = db_parada.get_all()
+  elif req.args.get('id_linha'):
+    result = simple.parada.get_one(where={
+      'field': 'id_linha',
+      'operator': '=',
+      'value': req.args.get('id_linha')
+    })
+
+    return res(jsonify(result), result['status'])
+
+  elif req.args.get('id_sentido'):
+    result = simple.parada.get_one(where={
+      'field': 'id_sentido',
+      'operator': '=',
+      'value': req.args.get('id_sentido')
+    })
+
+    return res(jsonify(result), result['status'])
+    
+  result = simple.parada.get_all()
+
   return res(jsonify(result), result['status'])
 
 @app.route("/parada", methods=['POST'])

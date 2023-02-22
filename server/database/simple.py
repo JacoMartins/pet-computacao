@@ -7,6 +7,7 @@ class create_schema:
     def __init__(self, **kwargs):
       self.table_name = kwargs.get('table_name')
       self.fields = kwargs.get('fields')
+
       self.dependants = kwargs.get('dependants')
 
       self.database_url = kwargs.get('database_url')
@@ -80,7 +81,7 @@ class create_schema:
           try: autoincrement = keyTypes.index('AUTOINCREMENT')
           except: autoincrement = False  
 
-          if not autoincrement:
+          if not autoincrement and not (key.startswith('fk') or key.startswith('FK') or key.startswith('pk') or key.startswith('PK')):
               sql += f'{key}, '
 
         sql = sql[:-2] + ') VALUES ('
@@ -89,14 +90,14 @@ class create_schema:
           try: autoincrement = keyTypes.index('AUTOINCREMENT')
           except: autoincrement = False
 
-          if not autoincrement:
+          if not autoincrement and not (key.startswith('fk') or key.startswith('FK') or key.startswith('pk') or key.startswith('PK')):
               sql += '?, '
             
         sql = sql[:-2] + ');'
 
         cursor.execute(sql, tuple(kwargs.values()))
 
-      return response_message(status=200, message=f'Objeto inserido com sucesso.', data=self.get_last()['data']).get_dict()
+      return response_message(status=200, message=f'Objeto inserido com sucesso.', data=self.get_last()).get_dict()
 
     # SELECT
 
@@ -232,49 +233,92 @@ class create_schema:
 
       return response_message(status=200, message=f'{len(dataExists)} objetos contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foram atualizados.').get_dict()
 
-    # DELETE
+    # DELETE MANY - DELETE ALL OBJECTS GIVEN A WHERE CONDITION
 
     def delete_many(self, **kwargs):
       fields = self.fields
       where = kwargs.get('where')
 
-      dataExists = self.select_many(where=where)
+      try:
+        dataExists = self.get_many(where=where)['data']
+      except:
+        dataExists = None
 
-      if len(dataExists) == 0:
+      if not dataExists:
         return response_message(status=404, message=f'Erro ao deletar: Nenhum objeto contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foi encontrado.').get_dict()
+      
+      if len(dataExists) == 0:
+        return response_message(status=200, message=f'Erro ao deletar: Nenhum objeto contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foi encontrado.').get_dict()
 
       self.validate_field(where['field'])
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'DELETE FROM {self.table_name} WHERE '
+        sql = []
+
+        for data in dataExists:
+          for dependant in self.dependants:
+            for depended_table in dependant['depends_on']:
+              if depended_table['table'] == self.table_name:
+                sql.append(f'DELETE FROM {dependant["table"]} WHERE {depended_table["field"]} = {sqlDataType(data["id"])};')
+
+        sql.append(f'DELETE FROM {self.table_name} WHERE ')
 
         for key, keyTypes in fields.items():
           if key == where['field']:
-            sql += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
+            sql[-1] += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
 
-        sql = sql[:-2] + ';'
+        sql[-1] = sql[-1][:-2] + ';'
 
-        cursor.execute(sql)
-      return response_message(status=200, message=f'{len(dataExists)} objetos contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} deletado com sucesso.').get_dict()
+        for query in sql:
+          cursor.execute(query)
+      return response_message(status=204, message=f'{len(dataExists)} objetos contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} deletado com sucesso.').get_dict()
+
+    # DELETE ALL - DELETES ALL OBJECTS IN THE TABLE
 
     def delete_all(self):
+      try:
+        dataExists = self.get_all()['data']
+      except:
+        dataExists = None
+
+      if not dataExists:
+        return response_message(status=404, message=f'Erro ao deletar: Nenhum objeto foi encontrado.').get_dict()
+      
+      if len(dataExists) == 0:
+        return response_message(status=200, message=f'Erro ao deletar: Não há objetos a serem deletados.').get_dict()
+
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'DELETE * FROM {self.table_name};'
+        sql = []
 
-        cursor.execute(sql)
-      return response_message(status=200, message='Todos os objetos foram deletados com sucesso.').get_dict()
+        for data in dataExists:
+          for dependant in self.dependants:
+            for depended_table in dependant['depends_on']:
+              if depended_table['table'] == self.table_name:
+                sql.append(f'DELETE FROM {dependant["table"]} WHERE {depended_table["field"]} = {sqlDataType(data["id"])};')
+
+        sql.append(f'DELETE FROM {self.table_name};')
+
+        for query in sql:
+          cursor.execute(query)
+
+      return response_message(status=204, message='Todos os objetos foram deletados com sucesso.').get_dict()
+
+    # DELETE ONE - DELETES ONE OBJECT IN THE TABLE
 
     def delete_one(self, **kwargs):
       fields = self.fields
       where = kwargs.get('where')
 
-      dataExists = self.select_one(where=where)
+      try:
+        dataExists = self.get_one(where=where)['data']
+      except:
+        dataExists = None
 
-      if dataExists == None:
+      if not dataExists:
         return response_message(status=404, message=f'Erro ao deletar: Nenhum objeto contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foi encontrado.').get_dict()
 
       self.validate_field(where['field'])
@@ -282,16 +326,25 @@ class create_schema:
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'DELETE FROM {self.table_name} WHERE '
+        sql = []
+
+        for dependant in self.dependants:
+          for depended_table in dependant['depends_on']:
+            if depended_table['table'] == self.table_name:
+              sql.append(f'DELETE FROM {dependant["table"]} WHERE {depended_table["field"]} = {sqlDataType(dataExists["id"])};')
+
+        sql.append(f'DELETE FROM {self.table_name} WHERE ')
 
         for key, keyTypes in fields.items():
           if key == where['field']:
-            sql += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
+            sql[-1] += f'{key} {where["operator"]} {sqlDataType(where["value"])}, '
 
-        sql = sql[:-2] + ';'
+        sql[-1] = sql[-1][:-2] + ';'
 
-        cursor.execute(sql)
-      return response_message(status=200, message=f'1 objeto contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foi deletado com sucesso.').get_dict()
+        for query in sql:
+          cursor.execute(query)
+
+      return response_message(status=204, message=f'1 objeto contendo o valor {sqlDataType(where["value"])} no campo {sqlDataType(where["field"])} foi deletado com sucesso.').get_dict()
 
     # GET
 
@@ -344,7 +397,7 @@ class simple:
 
     for schema in self.schemas:
       setattr(self, schema['name'], create_schema(database_url=self.database_url, table_name=schema['name'], fields=schema['fields'], dependants=self.dependants))
-      
+
       self.dependants.append({
         'table': schema['name'],
         'depends_on': []
