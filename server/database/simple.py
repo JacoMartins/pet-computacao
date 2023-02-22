@@ -91,13 +91,13 @@ class create_schema:
           except: autoincrement = False
 
           if not autoincrement and not (key.startswith('fk') or key.startswith('FK') or key.startswith('pk') or key.startswith('PK')):
-              sql += '?, '
+              sql += f'{sqlDataType(kwargs[key])}, '
             
         sql = sql[:-2] + ');'
 
-        cursor.execute(sql, tuple(kwargs.values()))
+        cursor.execute(sql)
 
-      return response_message(status=200, message=f'Objeto inserido com sucesso.', data=self.get_last()).get_dict()
+      return response_message(status=200, message=f'Objeto inserido com sucesso.', data=self.get_last()['data']).get_dict()
 
     # SELECT ALL
 
