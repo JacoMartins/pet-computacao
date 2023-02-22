@@ -131,13 +131,25 @@ class create_schema:
 
     # SELECT LAST
 
-    def select_last(self):
+    def select_last(self, **kwargs):
       fields = self.fields
+
+      try: select_fields = kwargs.get('select_fields')
+      except: select_fields = None
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
-        sql = f'SELECT * FROM {self.table_name} ORDER BY id DESC LIMIT 1;'
+        sql = f'SELECT '
+
+        if select_fields:
+          for field in select_fields:
+            sql += f'{field}, '
+          sql = sql[:-2] + ' '
+        else:
+          sql += '* '
+        
+        sql += f'FROM {self.table_name} ORDER BY id DESC LIMIT 1;'
 
         cursor.execute(sql)
 
@@ -472,13 +484,13 @@ class create_schema:
 
       return response_message(status=200, message='1 objeto foi encontrado com sucesso.', data=result).get_dict()
     
-    def get_last(self):
-      data = self.select_last()
+    def get_last(self, **kwargs):
+      data = self.select_last(**kwargs)
 
       if data == None:
         return response_message(status=404, message='Não encontrado.').get_dict()
 
-      result = self.create_dict(data)
+      result = self.create_dict(data, select_fields=kwargs.get('select_fields'))
 
       return response_message(status=200, message='1 objeto foi encontrado com sucesso.', data=result).get_dict()
 
