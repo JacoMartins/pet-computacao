@@ -1,23 +1,19 @@
 from flask import Flask, request as req, jsonify, make_response as res
+from flask_cors import CORS, cross_origin
+from datetime import datetime
 
-from database.classes.linha_instance import linha
-from database.classes.viagem_instance import viagem
-from database.classes.parada_instance import parada
-from database.classes.reserva_instance import reserva
+from database.db import simple
 
-from database.db_global import global_functions
+simple.setup()
 
-banco = 'database.db'
+today = datetime.now()
+
+iso_date = today.isoformat()
 
 app = Flask(__name__)
 
-db_global = global_functions(banco)
-db_linha = linha(banco)
-db_viagem = viagem(banco)
-db_parada = parada(banco)
-db_reserva = reserva(banco)
-
-db_global.db_config()
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route("/")
 def index():
@@ -27,12 +23,16 @@ def index():
 
 @app.route("/linha", methods=['GET'])
 def get_linha():
-  if req.args.get('id'):
-    result = db_linha.get(req.args.get('id'))
+  if req.args.get('cod'):
+    result = simple.linha.get_one(where={
+      'field': 'cod',
+      'operator': '=',
+      'value': req.args.get('cod')
+    })
 
     return res(jsonify(result), result['status'])
     
-  result = db_linha.get_all()
+  result = simple.linha.get_all()
 
   return res(jsonify(result), result['status'])
 
@@ -40,8 +40,10 @@ def get_linha():
 @app.route("/linha", methods=['POST'])
 def post_linha():
   data = req.get_json()
+  data['criado_em'] = iso_date
+  data['atualizado_em'] = iso_date
 
-  result = db_linha.insert(data)
+  result = simple.linha.insert(**data)
 
   return res(jsonify(result), result['status'])
 
@@ -50,7 +52,19 @@ def put_linha():
   id = req.args.get('id')
   data = req.get_json()
 
-  result = db_linha.update(id, data)
+  data['criado_em'] = simple.linha.get_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  })['data']['criado_em']
+
+  data['atualizado_em'] = iso_date
+
+  result = simple.linha.update_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  }, data=data)
 
   return res(jsonify(result), result['status'])
 
@@ -58,7 +72,11 @@ def put_linha():
 def delete_linha():
   id = req.args.get('id')
 
-  result = db_linha.delete(id)
+  result = simple.linha.delete_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  })
 
   return res(jsonify(result), result['status'])
 
@@ -67,20 +85,43 @@ def delete_linha():
 @app.route('/viagem', methods=['GET'])
 def get_viagem():
   if req.args.get('id'):
-    result = db_viagem.get(req.args.get('id'))
-    return res(jsonify(result), result['status'])
-  if req.args.get('linha'):
-    result = db_viagem.get_where('id_linha', '=', req.args.get('linha'))
+    result = simple.viagem.get_one(where={
+      'field': 'id',
+      'operator': '=',
+      'value': req.args.get('id')
+    })
+
     return res(jsonify(result), result['status'])
 
-  result = db_viagem.get_all()
-  return result
+  elif req.args.get('id_linha'):
+    result = simple.viagem.get_one(where={
+      'field': 'id_linha',
+      'operator': '=',
+      'value': req.args.get('id_linha')
+    })
+
+    return res(jsonify(result), result['status'])
+
+  elif req.args.get('id_sentido'):
+    result = simple.viagem.get_one(where={
+      'field': 'id_sentido',
+      'operator': '=',
+      'value': req.args.get('id_sentido')
+    })
+
+    return res(jsonify(result), result['status'])
+    
+  result = simple.viagem.get_all()
+
+  return res(jsonify(result), result['status'])
 
 @app.route("/viagem", methods=['POST'])
 def post_viagem():
   data = req.get_json()
+  data['criado_em'] = iso_date
+  data['atualizado_em'] = iso_date
 
-  result = db_viagem.insert(data)
+  result = simple.viagem.insert(**data)
 
   return res(jsonify(result), result['status'])
 
@@ -89,7 +130,19 @@ def put_viagem():
   id = req.args.get('id')
   data = req.get_json()
 
-  result = db_viagem.update(id, data)
+  data['criado_em'] = simple.viagem.get_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  })['data']['criado_em']
+
+  data['atualizado_em'] = iso_date
+
+  result = simple.viagem.update_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  }, data=data)
 
   return res(jsonify(result), result['status'])
 
@@ -97,7 +150,11 @@ def put_viagem():
 def delete_viagem():
   id = req.args.get('id')
 
-  result = db_viagem.delete(id)
+  result = simple.viagem.delete_one(where={
+    'field': 'id',
+    'operator': '=',
+    'value': id
+  })
 
   return res(jsonify(result), result['status'])
 
@@ -178,4 +235,4 @@ def delete_reserva():
   return res(jsonify(result), result['status'])
 
 if __name__ == "__main__":
-  app.run(debug=True)
+  app.run(debug=True, host="0.0.0.0")
