@@ -34,6 +34,18 @@ def get_linha():
 
   return res(jsonify(result), result['status'])
 
+@app.route("/linha_sentidos", methods=['GET'])
+def get_linha_sentidos():
+  result = simple.linha.get_all()
+
+  for linha in result['data']:
+    linha['sentidos'] = simple.sentido.get_many(where={
+      'field': 'id_linha',
+      'operator': '=',
+      'value': linha['id']
+    })['data']
+
+  return res(jsonify(result), result['status'])
 
 @app.route("/linha", methods=['POST'])
 def post_linha():
@@ -187,8 +199,8 @@ def get_parada():
 
     return res(jsonify(result), result['status'])
 
-  elif req.args.get('linha') and req.args.get('sentido'):
-    result = simple.parada.get_one(where={
+  if req.args.get('linha') and req.args.get('sentido'):
+    result = simple.parada.get_many(where={
       'AND': [
         {
           'field': 'id_linha',
@@ -349,8 +361,8 @@ def get_sentido():
 
     return res(jsonify(result), result['status'])
 
-  elif req.args.get('linha'):
-    result = simple.sentido.get_one(where={
+  if req.args.get('linha'):
+    result = simple.sentido.get_many(where={
       'field': 'id_linha',
       'operator': '=',
       'value': req.args.get('linha')

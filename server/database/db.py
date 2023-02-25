@@ -26,6 +26,7 @@ simple = simple(
         "valor_inteira": [float, "NOT NULL"],
         "valor_meia": [float, "NOT NULL"],
         "tipo": [str, "NOT NULL"],
+        "capacidade_assento": [int, "NOT NULL"],
         "criado_em": [str, "NOT NULL"],
         "atualizado_em": [str, "NULL"]
       }
@@ -37,6 +38,8 @@ simple = simple(
         "id": [int, "PRIMARY KEY", "AUTOINCREMENT", "NOT NULL"],
         "id_linha": [int, "NOT NULL"],
         "sentido": [str, "NOT NULL"],
+        "ponto_partida": [str, "NOT NULL"],
+        "ponto_destino": [str, "NOT NULL"],
         "horario_inicio": [str, "NOT NULL"],
         "horario_fim": [str, "NOT NULL"],
         "criado_em": [str, "NOT NULL"],
@@ -77,6 +80,7 @@ simple = simple(
         "pago_meia": [int, "NOT NULL"],
         "gratuidade": [int, "NOT NULL"],
         "assentos_disponiveis": [int, "NOT NULL"],
+        "assentos_ocupados": [int, "NOT NULL"],
         "criado_em": [str, "NOT NULL"],
         "atualizado_em": [str, "NULL"],
 
