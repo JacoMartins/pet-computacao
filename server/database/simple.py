@@ -80,6 +80,17 @@ class create_schema:
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
+        for key, keyTypes in fields.items():
+          if key.startswith('FK') or key.startswith('fk'):
+            table, field, identificator = keyTypes[1].split('(')[0], keyTypes[1].split('(')[1][:-1], keyTypes[0]
+
+            sql = f'SELECT * FROM {table} WHERE {field} = {sqlDataType(kwargs[identificator])};'
+
+            cursor.execute(sql)
+
+            if not cursor.fetchone():
+              raise Exception(f'Foreign key {sqlDataType(kwargs[identificator])} not found in table {sqlDataType(table)}.')
+
         sql = f'INSERT INTO {self.table_name} ('
         for key, keyTypes in fields.items():
           try: autoincrement = keyTypes.index('AUTOINCREMENT')
@@ -300,6 +311,18 @@ class create_schema:
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
+        for field in data:
+          for key, keyTypes in fields.items():
+            if key.startswith('fk') or key.startswith('FK'):
+              table, field, identificator = keyTypes[1].split('(')[0], keyTypes[1].split('(')[1][:-1], keyTypes[0]
+
+              sql = f'SELECT * FROM {table} WHERE {field} = {sqlDataType(data[identificator])};'
+
+              cursor.execute(sql)
+
+              if not cursor.fetchone():
+                raise Exception(f'Foreign key {sqlDataType(data[identificator])} not found in table {sqlDataType(table)}.')
+
         sql = f'UPDATE {self.table_name} SET '
 
         for key, value in data.items():
@@ -331,6 +354,18 @@ class create_schema:
 
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
+
+        for field in data:
+          for key, keyTypes in fields.items():
+            if key.startswith('fk') or key.startswith('FK'):
+              table, field, identificator = keyTypes[1].split('(')[0], keyTypes[1].split('(')[1][:-1], keyTypes[0]
+
+              sql = f'SELECT * FROM {table} WHERE {field} = {sqlDataType(data[identificator])};'
+
+              cursor.execute(sql)
+
+              if not cursor.fetchone():
+                raise Exception(f'Foreign key {sqlDataType(data[identificator])} not found in table {sqlDataType(table)}.')
 
         sql = f'UPDATE {self.table_name} SET '
 
