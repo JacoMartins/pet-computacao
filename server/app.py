@@ -21,11 +21,11 @@ def index():
 
 @app.route("/linha", methods=['GET'])
 def get_linha():
-  if req.args.get('cod'):
+  if req.args.get('id'):
     result = simple.linha.get_one(where={
-      'field': 'cod',
+      'field': 'id',
       'operator': '=',
-      'value': req.args.get('cod')
+      'value': req.args.get('id')
     })
 
     return res(jsonify(result), result['status'])
@@ -36,16 +36,37 @@ def get_linha():
 
 @app.route("/linha_sentidos", methods=['GET'])
 def get_linha_sentidos():
-  result = simple.linha.get_all()
+  if(req.args.get('page')):
+    result = simple.linha.get_many(pagination={
+      'page': req.args.get('page'),
+      'limit': 10
+    })
 
-  for linha in result['data']:
-    linha['sentidos'] = simple.sentido.get_many(where={
-      'field': 'id_linha',
-      'operator': '=',
-      'value': linha['id']
-    })['data']
+    if result['data']:
+      for linha in result['data']:
+        linha['sentidos'] = simple.sentido.get_many(where={
+          'field': 'id_linha',
+          'operator': '=',
+          'value': linha['id']
+        })['data']
+  else:
+    result = simple.linha.get_all()
+
+    if result['data']:
+      for linha in result['data']:
+        linha['sentidos'] = simple.sentido.get_many(where={
+          'field': 'id_linha',
+          'operator': '=',
+          'value': linha['id']
+        })['data']
 
   return res(jsonify(result), result['status'])
+
+@app.route("/linha_count", methods=['GET'])
+def get_linha_count():
+  result = simple.linha.select_all(count='*')[0][0]
+
+  return res(jsonify(result))
 
 @app.route("/linha", methods=['POST'])
 def post_linha():

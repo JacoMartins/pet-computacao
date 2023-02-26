@@ -21,7 +21,7 @@ simple = simple(
       "name": "linha",
       "fields":{
         "id": [int, "PRIMARY KEY", "AUTOINCREMENT", "NOT NULL"],
-        "cod": [str, "UNIQUE", "NOT NULL"],
+        "cod": [str, "NOT NULL"],
         "nome": [str, "NOT NULL"],
         "valor_inteira": [float, "NOT NULL"],
         "valor_meia": [float, "NOT NULL"],

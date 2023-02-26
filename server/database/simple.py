@@ -122,6 +122,9 @@ class create_schema:
       try: select_fields = kwargs.get('select_fields')
       except: select_fields = None
 
+      try: count = kwargs.get('count')
+      except: count = None
+
       with sqlite3.connect(self.database_url) as connection:
         cursor = connection.cursor()
 
@@ -131,6 +134,8 @@ class create_schema:
           for field in select_fields:
             sql += f'{field}, '
           sql = sql[:-2] + ' '
+        elif count:
+          sql += f'COUNT(*) '
         else:
           sql += '* '
         
@@ -177,6 +182,9 @@ class create_schema:
       try: select_fields = kwargs.get('select_fields')
       except: select_fields = None
 
+      try: count = kwargs.get('count')
+      except: count = None
+
       try: self.validate_field(where['field']) if where['field'] and where['operator'] and sqlDataType(where['value']) else None
       except: pass
 
@@ -189,6 +197,8 @@ class create_schema:
           for field in select_fields:
             sql += f'{field}, '
           sql = sql[:-2] + ' '
+        elif count:
+          sql += f'COUNT({count}) '
         else:
           sql += '* '
         
@@ -238,6 +248,12 @@ class create_schema:
       try: where = kwargs.get('where')
       except: where = None
 
+      try: pagination = kwargs.get('pagination')
+      except: pagination = None
+
+      try: count = kwargs.get('count')
+      except: count = None
+
       try: select_fields = kwargs.get('select_fields')
       except: select_fields = None
 
@@ -253,6 +269,8 @@ class create_schema:
           for field in select_fields:
             sql += f'{field}, '
           sql = sql[:-2] + ' '
+        elif count:
+          sql += f'COUNT({count}) '
         else:
           sql += '* '
         
@@ -281,13 +299,16 @@ class create_schema:
           except:
             pass
 
-        try: sql = sql[:-5] + ';' if where['AND'] else None
+        try: sql = sql[:-5] + ' ' if where['AND'] else None
         except: pass
 
-        try: sql = sql[:-4] + ';' if where['OR'] else None
+        try: sql = sql[:-4] + ' ' if where['OR'] else None
         except: pass
 
-        try: sql = sql[:-1] + ';' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+        try: sql = sql[:-1] + ' ' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
+        except: pass
+        
+        try: sql = sql + f'LIMIT {pagination["limit"]};' if pagination else sql[:-1] + ';'
         except: pass
 
         cursor.execute(sql)
@@ -530,7 +551,43 @@ class create_schema:
       return response_message(status=200, message='1 objeto foi encontrado com sucesso.', data=result).get_dict()
 
     def get_many(self, **kwargs):
-      result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(**kwargs)]
+      try: pagination = kwargs.get('pagination')
+      except: pagination = None
+
+      try: count = kwargs.get('count')
+      except: count = None
+
+
+      if pagination:
+        if int(pagination['page']) <= 0:
+          return response_message(status=400, message='Erro ao buscar: O número da página deve ser maior que 0.').get_dict()
+        if pagination['limit'] <= 0:
+          return response_message(status=400, message='Erro ao buscar: O número de objetos por página deve ser maior que 0.').get_dict()
+
+      
+      if pagination:
+        result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(where={
+          'field': 'id',
+          'operator': '>=',
+          'value': (int(pagination['page']) - 1) * int(pagination['limit']) + 1
+        }, pagination={
+          'limit': pagination['limit']
+        })]
+
+        if count:
+          result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(where={
+            'field': 'id',
+            'operator': '>=',
+            'value': (int(pagination['page']) - 1) * int(pagination['limit']) + 1
+          }, pagination={
+            'limit': pagination['limit']
+          }, count='*')]
+
+      else:
+        result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(**kwargs)]
+      
+      if count:
+        result = [self.create_dict(row, kwargs.get('select_fields')) for row in self.select_many(**kwargs)]
 
       if len(result) == 0:
         return response_message(status=200, message='Nada encontrado.', data=result).get_dict()
@@ -538,7 +595,7 @@ class create_schema:
         return response_message(status=500, message='Erro interno do servidor.').get_dict()
       
       return response_message(status=200, message=f'{len(result)} objetos encontrados com sucesso.', data=result).get_dict()
-
+    
 class simple:
   def __init__(self, **kwargs):
     self.database_url = kwargs.get('database_url')
