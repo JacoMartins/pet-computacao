@@ -39,15 +39,13 @@ export const Main = styled('tr', {
         gap: '0.5rem',
 
         button: {
-          cursor: 'pointer',
-          color: '$green_700',
-          fontWeight: '600',
-          textTransform: 'uppercase',
           width: 'fit-content',
-          gap: '0.5rem',
-          padding: '0.25rem',
-          border: 'none',
           fontSize: '0.875rem',
+
+          '&:disabled': {
+            cursor: 'default',
+            color: '$black_300',
+          },
 
           '@media screen and (max-width: 768px)': {
             padding: '0.5rem',
@@ -98,7 +96,7 @@ export const Main = styled('tr', {
           alignItems: 'flex-start',
           textAlign: 'left',
           lineHeight: '100%',
-          gap: '0.25rem',
+          gap: '0.5rem',
         },
       },
 

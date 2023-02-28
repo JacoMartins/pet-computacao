@@ -16,9 +16,6 @@ export default function Header({}: HeaderProps) {
   const [headerHeight, setHeaderHeight] = useState(0);
   const router = useRouter();
 
-  const [isLogged, setIsLogged] = useState(false);
-  const profileImage = 'https://st2.depositphotos.com/5682790/10456/v/600/depositphotos_104564156-stock-illustration-male-user-icon.jpg';
-
   const isTransparent = scrollY === 0;
 
   const refs = {
@@ -60,51 +57,6 @@ export default function Header({}: HeaderProps) {
 
         <div className="rightContainer">
           <Nav isNavOpen={isNavOpen} />
-          {isLogged ? (
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild={false} className="DropdownMenuButton">
-                <ProfileButton main_name={'noname'} picture_profile={profileImage} />
-              </DropdownMenu.Trigger>
-
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content className="DropdownMenuContent" sideOffset={5}>
-                  <DropdownMenu.Label className="DropdownMenuLabel" style={{ paddingLeft: '0.5rem' }}>
-                    <LabelText>
-                      Jacó Martins
-                    </LabelText>
-                  </DropdownMenu.Label>
-                  <DropdownMenu.Arrow className="DropdownMenuArrow" />
-                  <DropdownMenu.Item className="DropdownMenuItem">
-                    <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
-                      <User size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
-                    </DropdownMenu.Item>
-                    Meu perfil
-                  </DropdownMenu.Item>
-
-                  <DropdownMenu.Separator className="DropdownMenuSeparator" />
-
-                  <DropdownMenu.Item className="DropdownMenuItem">
-                    <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
-                      <Gear size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
-                    </DropdownMenu.Item>
-                    Configurações
-                  </DropdownMenu.Item>
-
-                  <DropdownMenu.Item className="DropdownMenuItem">
-                    <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
-                      <SignOut size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
-                    </DropdownMenu.Item>
-                    Sair
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          ) : (
-            <>
-              <NavButton onClick={() => setIsLogged(true)} isSignUp={false}>Criar conta</NavButton>
-              <NavButton onClick={() => setIsLogged(true)} isSignUp={true}>Entrar</NavButton>
-            </>
-          )}
         </div>
       </div>
     </HeaderContainer>

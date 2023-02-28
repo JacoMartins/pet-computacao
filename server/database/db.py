@@ -28,7 +28,8 @@ simple = simple(
         "tipo": [str, "NOT NULL"],
         "capacidade_assento": [int, "NOT NULL"],
         "criado_em": [str, "NOT NULL"],
-        "atualizado_em": [str, "NULL"]
+        "atualizado_em": [str, "NULL"],
+        
       }
     },
 

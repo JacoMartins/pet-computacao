@@ -1,6 +1,8 @@
 from flask import Flask, request as req, jsonify, make_response as res
 from flask_cors import CORS, cross_origin
 from datetime import datetime
+from utils.response_message import response_message
+from utils.strip_accents import strip_accents
 import bcrypt
 
 from database.db import simple
@@ -39,7 +41,7 @@ def get_linha_sentidos():
   if(req.args.get('page')):
     result = simple.linha.get_many(pagination={
       'page': req.args.get('page'),
-      'limit': 10
+      'limit': 15
     })
 
     if result['data']:
@@ -59,6 +61,83 @@ def get_linha_sentidos():
           'operator': '=',
           'value': linha['id']
         })['data']
+
+  return res(jsonify(result), result['status'])
+
+@app.route("/search_linha", methods=['GET'])
+def get_search_linha():
+  query, page = req.args.get('query'), req.args.get('page')
+
+  if query and page:
+    result = simple.linha.get_many(where={
+      "OR": [
+        {
+          'field': 'nome',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        },
+
+        {
+          'field': 'cod',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        },
+
+        {
+          'field': 'tipo',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        }
+      ]
+    }, pagination={
+      'page': req.args.get('page'),
+      'limit': 15
+    })
+
+    try: 
+      if result['data']:
+        for linha in result['data']:
+          linha['sentidos'] = simple.sentido.get_many(where={
+            'field': 'id_linha',
+            'operator': '=',
+            'value': linha['id']
+          })['data']
+    except KeyError as e:
+      result = response_message(status=200, message="Nenhuma linha encontrada.", data=[]).get_dict()
+      
+  else:
+    result = simple.linha.get_many(where={
+      "OR": [
+        {
+          'field': 'nome',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        },
+
+        {
+          'field': 'cod',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        },
+
+        {
+          'field': 'tipo',
+          'operator': 'LIKE',
+          'value': f'%{req.args.get("query")}%'
+        }
+      ]
+    })
+    
+    try:
+      if result['data']:
+        for linha in result['data']:
+          linha['sentidos'] = simple.sentido.get_many(where={
+            'field': 'id_linha',
+            'operator': '=',
+            'value': linha['id']
+          })['data']
+    except KeyError as e:
+      result = response_message(status=200, message="Nenhuma linha encontrada.", data=[]).get_dict()
 
   return res(jsonify(result), result['status'])
 

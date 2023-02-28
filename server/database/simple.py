@@ -245,17 +245,11 @@ class create_schema:
     def select_many(self, **kwargs):
       fields = self.fields
 
-      try: where = kwargs.get('where')
-      except: where = None
-
-      try: pagination = kwargs.get('pagination')
-      except: pagination = None
-
-      try: count = kwargs.get('count')
-      except: count = None
-
-      try: select_fields = kwargs.get('select_fields')
-      except: select_fields = None
+      where = kwargs.get('where', None)
+      pagination = kwargs.get('pagination', None)
+      count = kwargs.get('count', None)
+      order_by = kwargs.get('order_by', None)
+      select_fields = kwargs.get('select_fields', None)
 
       try: self.validate_field(where['field']) if where['field'] and where['operator'] and sqlDataType(where['value']) else None
       except: pass
@@ -307,9 +301,14 @@ class create_schema:
 
         try: sql = sql[:-1] + ' ' if where['field'] and where['operator'] and sqlDataType(where['value']) else None
         except: pass
+
+        try : sql += f'ORDER BY {order_by["field"]} {order_by["order"]} '
+        except: pass
         
         try: sql = sql + f'LIMIT {pagination["limit"]};' if pagination else sql[:-1] + ';'
         except: pass
+
+        print(sql)
 
         cursor.execute(sql)
 

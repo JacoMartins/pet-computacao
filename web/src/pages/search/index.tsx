@@ -1,5 +1,5 @@
 import Header from '../../components/Header'
-import { BodyContainer, Main } from '../../styles/pages/linhas'
+import { BodyContainer, Main } from '../../styles/pages/search'
 
 import { api } from '../../services/api'
 import { linha } from '../../types/api/linha'
@@ -13,7 +13,7 @@ import { int } from '../../utils/convert'
 import { useState } from 'react'
 import Head from 'next/head'
 
-export default function Linhas({ linhas, page, page_count }) {
+export default function Search({ linhas, query }) {
   const router = useRouter()
   const [searchInput, setSearchInput] = useState<string>('')
 
@@ -25,7 +25,7 @@ export default function Linhas({ linhas, page, page_count }) {
   return (
     <>
       <Head>
-        <title>Moovooca - Linhas</title>
+        <title>{query} - Pesquisa Moovooca</title>
         <meta name='description' content='Linhas de Ônibus dos Campus UFC' />
       </Head>
       <Main>
@@ -36,7 +36,7 @@ export default function Linhas({ linhas, page, page_count }) {
               <h1>Linhas</h1>
               <h3 className='lead'>Pesquise ou selecione a linha que fica melhor para você.</h3>
               <form onSubmit={() => goTo(`/search?query=${searchInput}`)} className='searchContainer'>
-                <input type="text" placeholder="Pesquisar" onChange={event => setSearchInput(event.target.value)} />
+                <input type="text" placeholder="Pesquisar" defaultValue={query} onChange={event => setSearchInput(event.target.value)} />
                 <button type='submit'><MagnifyingGlass size={18} weight="bold" color="#2f855a" /></button>
               </form>
             </div>
@@ -61,20 +61,6 @@ export default function Linhas({ linhas, page, page_count }) {
                   }} />
                 )
               })}
-              <TableRow data={{
-                info:
-                  <div className='pagination'>
-                    <span>Página {page} de {page_count}</span>
-                    <div className='buttonContainer'>
-                      <button onClick={() => goTo(`/linhas?page=${int(page) - 1}`)} disabled={!(page > 1)}>
-                        <CaretLeft size={18} color={page > 1 ? '#276749' : 'rgba(0, 0, 0, 0.25)'} weight="bold" />
-                      </button>
-                      <button onClick={() => goTo(`/linhas?page=${int(page) + 1}`)} disabled={!(page < page_count)}>
-                        <CaretRight size={18} color={page < page_count ? '#276749' : 'rgba(0, 0, 0, 0.25)'} weight="bold" />
-                      </button>
-                    </div>
-                  </div>
-              }} />
             </Table>
           </section>
         </BodyContainer>
@@ -84,18 +70,14 @@ export default function Linhas({ linhas, page, page_count }) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const page = context.query.page || 1;
+  const query = context.query.query || '';
 
-  const { data: linha } = await api.get(`/linha_sentidos?page=${page}`);
-  const { data: contagem_linhas } = await api.get(`/linha_count`);
-
-  const page_count = Math.ceil(int(contagem_linhas) / 15);
+  const { data: linha } = await api.get(`/search_linha?query=${query}`);
 
   return {
     props: {
-      linhas: linha.data,
-      page,
-      page_count,
+      linhas: linha.data || [],
+      query
     }
   }
 }

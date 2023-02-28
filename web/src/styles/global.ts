@@ -1,6 +1,15 @@
 import { keyframes } from "@stitches/react";
 import { styled, globalCss } from ".";
 
+const spin = keyframes({
+  '0%': {
+    transform: 'rotate(0deg)',
+  },
+  '100%': {
+    transform: 'rotate(360deg)',
+  }
+})
+
 export const slideUpAndFade = keyframes({
   from: {
     opacity: 0,
@@ -81,17 +90,19 @@ export const globalStyles = globalCss({
   },
 
   'input': {
-    color: '$silk_white',
-    backgroundColor: '$purply_white_100',
-    borderRadius: '2rem',
+    color: '$black_850',
+    backgroundColor: '$white',
+    borderRadius: '0.375rem',
     padding: '0.675rem 0.75rem',
     fontSize: 16,
-    border: 'solid 1px $white_150',
-    outline: 0,
+    border: 'solid 1px $black_150',
+    outline: 'solid 2px transparent',
+    transition: 'all 0.2s ease-in-out',
 
     '&:focus': {
       transition: 'all 0.2s ease-in-out',
-      border: 'solid 1px $purple_500',
+      border: 'solid 1px $green_400',
+      outline: 'solid 3px rgba(56, 161, 105, 0.3)',
     }
   },
 
@@ -280,6 +291,11 @@ export const globalStyles = globalCss({
       padding: '0.5rem 0.5rem 0.5rem 2rem',
     },
   },
+
+  'svg.load': {
+    animation: `${spin} 1s infinite linear`,
+    opacity: 0.6
+  }
 });
 
 export const Footer = styled('footer', {

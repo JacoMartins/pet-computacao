@@ -8,20 +8,28 @@ import { useEffect, useState } from 'react'
 import { linha, response_linha } from '../types/api/linha'
 import Table from '../components/Table'
 import TableRow from '../components/TableRow'
-import { Bus, CaretRight, Info } from 'phosphor-react'
+import { Bus, CaretRight, Info, MagnifyingGlass } from 'phosphor-react'
 import { Footer } from '../styles/global'
 import { useRouter } from 'next/router'
+import Head from 'next/head'
 import { GetServerSideProps, GetServerSidePropsContext } from 'next'
 
 export default function Home({ linhas }) {
+  const [searchInput, setSearchInput] = useState<string>('')
   const router = useRouter()
 
   function goTo(path: string) {
+    event.preventDefault()
+    
     router.push(path)
   }
 
   return (
     <>
+      <Head>
+        <title>Moovooca - Início</title>
+        <meta name='description' content='Linhas de Ônibus dos Campus UFC' />
+      </Head>
       <Main>
         <Header />
         <BodyContainer>
@@ -31,32 +39,10 @@ export default function Home({ linhas }) {
               <h3 className='lead'>Linhas de Ônibus dos Campus UFC</h3>
             </div>
 
-            <Table header={['Linhas']}>
-              {linhas.map((linha: linha) => {
-                return (
-                  <TableRow key={linha.id} data={{
-                    linha:
-                      <button onClick={() => goTo(`/linha?id=${linha.id}&sentido=${linha.sentidos[0].id}`)}>
-                        <div className='firstContainer'>
-                          <span><Bus size={18} color="#2f855a" weight="bold" />{linha.cod}</span>
-                          {linha.nome}
-                        </div>
-                        <div className='lastContainer'>
-                          <span>Passa próximo de</span>
-                          <a> </a>
-                        </div>
-                      </button>,
-                  }} />
-                )
-              })}
-              <TableRow data={{
-                info:
-                  <a onClick={() => goTo('/linhas?page=1')}>
-                    Ver mais
-                    <CaretRight size={18} color="#276749" weight="bold" />
-                  </a>
-              }} />
-            </Table>
+            <form onSubmit={() => goTo(`/search?query=${searchInput}`)} className='searchContainer'>
+              <input type="text" placeholder="Pesquisar linha" onChange={event => setSearchInput(event.target.value)} />
+              <button type='submit'><MagnifyingGlass size={18} weight="bold" color="#2f855a" /></button>
+            </form>
           </section>
 
           <br />

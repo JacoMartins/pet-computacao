@@ -14,7 +14,7 @@ export const NavContainer = styled('nav', {
   display: 'flex',
   flexDirection: 'row',
   justifyContent: 'space-between',
-  gap: '2rem',
+  gap: '1rem',
 
   '@media screen and (max-width: 992px)': {
     gap: '0.5rem',
@@ -55,6 +55,16 @@ export const NavContainer = styled('nav', {
       justifyContent: 'space-between',
       gap: '0.5rem',
     },
+  },
+
+  '.authContainer': {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '0.5rem',
+
+    '@media screen and (max-width: 720px)': {
+      flexDirection: 'column',
+    }
   },
 
   variants: {

@@ -21,46 +21,43 @@ export const BodyContainer = styled('div', {
   alignItems: 'left',
   textAlign: 'left',
 
-  '.welcomeSection': {
+  '.searchContainer': {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'left',
+    alignItems: 'center',
+    borderRadius: '0.375rem',
+    border: 'solid 1px $black_150',
+    outline: 'solid 2px transparent',
+    transition: 'all 0.2s ease-in-out',
+    padding: '0.125rem',
+
+    '&:focus-within': {
+      border: 'solid 1px $green_400',
+      outline: 'solid 2px rgba(56, 161, 105, 0.3)',
+    },
+
+    input: {
+      width: '100%',
+      height: '100%',
+      padding: '0.5rem',
+      border: 0,
+      outline: 0,
+    },
+
+    button: {
+      borderRadius: '0.25rem',
+    }
+  },
+
+  '.headerSection': {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     gap: '0.5rem',
-
-    '.searchContainer': {
-      display: 'flex',
-      flexDirection: 'row',
-      justifyContent: 'left',
-      alignItems: 'center',
-      borderRadius: '0.375rem',
-      border: 'solid 1px $black_150',
-      outline: 'solid 2px transparent',
-      transition: 'all 0.2s ease-in-out',
-      padding: '0.125rem',
-      width: '20rem',
-
-      '@media screen and (max-width: 768px)': {
-        width: '100%',
-      },
-
-      '&:focus-within': {
-        border: 'solid 1px $green_400',
-        outline: 'solid 2px rgba(56, 161, 105, 0.3)',
-      },
-
-      input: {
-        width: '100%',
-        height: '100%',
-        padding: '0.5rem',
-        border: 0,
-        outline: 0,
-      },
-
-      button: {
-        borderRadius: '0.25rem',
-      }
-    },
-
+    borderBottom: 'solid 1px $black_150',
+    paddingBottom: '0.5rem',
+    
     '@media screen and (min-width: 720px)': {
       alignItems: 'left',
     },
@@ -80,6 +77,13 @@ export const BodyContainer = styled('div', {
         width: 'auto',
       },
     }
+  },
+
+  '.lineSection': {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'left', 
   }
 });
 

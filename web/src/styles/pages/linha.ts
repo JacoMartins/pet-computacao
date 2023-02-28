@@ -61,7 +61,9 @@ export const BodyContainer = styled('div', {
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'left',
+        alignItems: 'center',
         gap: '0.5rem',
+        fontSize: '1.75rem',
 
         span: {
           display: 'flex',
@@ -75,8 +77,8 @@ export const BodyContainer = styled('div', {
           color: '$green_700',
           
           svg: {
-            width: '2.375rem',
-            height: '2.375rem',
+            width: '1.875rem',
+            height: '1.875rem',
             
             '@media screen and (max-width: 720px)': {
               width: '1.5rem',
@@ -192,10 +194,6 @@ export const StopContainer = styled('div', {
       width: '3px',
       height: '100%',
       marginLeft: '-1.125rem',
-
-      '@media screen and (max-width: 768px)': {
-        height: '100%',
-      },
     },
 
     '&:only-child::before': {
@@ -211,16 +209,22 @@ export const StopContainer = styled('div', {
       '@media screen and (max-width: 768px)': {
         height: 'calc(0.5 * 100%)',
       },
+
+      '@media screen and (max-width: 480px)': {
+        transform: 'translateY(37.5%)',
+        height: 'calc(0.65 * 100%)',
+      }
     },
 
     '& + &:last-child::before':{
       content: "",
-      transform: 'translateY(-50%)',
-      height: 'calc(0.5 * 2.5rem)',
+      transform: 'translateY(-75%)',
+      height: '40%',
 
       '@media screen and (max-width: 768px)': {
-        height: 'calc(0.5 * 2.95rem)',
-      },
+        transform: 'translateY(-85%)',
+        height: '50%',
+      }
     },
 
     p: {

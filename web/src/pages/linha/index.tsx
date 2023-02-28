@@ -11,6 +11,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { sentido } from "../../types/api/sentido";
 import { GetServerSidePropsContext } from "next";
 import { LinhaProps } from "../../types/pages/Linha";
+import Head from "next/head";
 
 export default function Linha({ linha, sentido, sentidos, paradas }: LinhaProps) {
   const router = useRouter()
@@ -30,6 +31,10 @@ export default function Linha({ linha, sentido, sentidos, paradas }: LinhaProps)
 
   return (
     <>
+      <Head>
+        <title>Rota da linha {linha.cod} {linha.nome} - Moovooca</title>
+        <meta name='description' content='Linhas de Ônibus dos Campus UFC' />
+      </Head>
       <Main>
         <Header />
         <BodyContainer>
