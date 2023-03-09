@@ -67,6 +67,7 @@ export const Logo = styled('h2', {
   color: '$green_700',
   fontSize: '1.5rem',
   margin: '0.5rem 0',
+  cursor: 'pointer',
   
   span: {
     color: '$green_700',

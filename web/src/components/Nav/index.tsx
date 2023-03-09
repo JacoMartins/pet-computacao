@@ -1,22 +1,28 @@
 import { useRouter } from "next/router";
 import { NavButton, NavContainer } from "./styles";
-import { Bell, Gear, House, LineSegments, PaperPlaneTilt, SignOut, User } from 'phosphor-react';
+import { Gear, House, LineSegments, ListBullets, SignOut } from 'phosphor-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 import { NavProps } from "../../types/components/nav";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import ProfileButton from "../ProfileButton";
 import { LabelText } from "../Header/styles";
+import { AuthContext, logout } from "../../contexts/AuthContext";
 
 export default function Nav({ isNavOpen }: NavProps) {
   const router = useRouter();
   const page = router.pathname.split("/")[1];
+  const { autenticado, usuario, reload } = useContext(AuthContext);
 
-  const [isLogged, setIsLogged] = useState(false);
   const profileImage = 'https://st2.depositphotos.com/5682790/10456/v/600/depositphotos_104564156-stock-illustration-male-user-icon.jpg';
 
   function goTo(route: string) {
     router.push(route);
+  }
+
+  function handleLogout() {
+    logout();
+    reload();
   }
 
   return (
@@ -35,7 +41,7 @@ export default function Nav({ isNavOpen }: NavProps) {
       </div>
 
       <div className="authContainer">
-        {isLogged ? (
+        {autenticado ? (
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild={false} className="DropdownMenuButton">
               <ProfileButton main_name={'noname'} picture_profile={profileImage} />
@@ -45,15 +51,15 @@ export default function Nav({ isNavOpen }: NavProps) {
               <DropdownMenu.Content className="DropdownMenuContent" sideOffset={5}>
                 <DropdownMenu.Label className="DropdownMenuLabel" style={{ paddingLeft: '0.5rem' }}>
                   <LabelText>
-                    Jacó Martins
+                    {usuario.nome} {usuario.sobrenome}
                   </LabelText>
                 </DropdownMenu.Label>
                 <DropdownMenu.Arrow className="DropdownMenuArrow" />
                 <DropdownMenu.Item className="DropdownMenuItem">
                   <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
-                    <User size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
+                    <ListBullets size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
                   </DropdownMenu.Item>
-                  Meu perfil
+                  Minhas reservas
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Separator className="DropdownMenuSeparator" />
@@ -65,7 +71,7 @@ export default function Nav({ isNavOpen }: NavProps) {
                   Configurações
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item className="DropdownMenuItem">
+                <DropdownMenu.Item className="DropdownMenuItem" onClick={handleLogout}>
                   <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
                     <SignOut size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
                   </DropdownMenu.Item>

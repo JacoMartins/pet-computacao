@@ -10,7 +10,7 @@ import { NavButton } from "../Nav/styles";
 import { HeaderProps } from "../../types/components/header";
 import { useRouter } from "next/router";
 
-export default function Header({}: HeaderProps) {
+export default function Header({ }: HeaderProps) {
   const [scrollY, setScrollY] = useState(0);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -43,13 +43,10 @@ export default function Header({}: HeaderProps) {
       <div className='MainContainer'>
 
         <div className='LogoContainer'>
-          <HandleNav onClick={handleNav} active={isNavOpen}>
-            <List size={24} weight="fill" color="rgba(0, 0, 0, 0.85)" />
-          </HandleNav>
           <Logo onClick={() => goTo('/')}>
-            <Bus size={24} weight="regular" color="#276749"/>
+            <Bus size={24} weight="regular" color="#276749" />
             <span>
-            moovooca
+              moovooca
             </span>
           </Logo>
         </div>
@@ -58,6 +55,10 @@ export default function Header({}: HeaderProps) {
         <div className="rightContainer">
           <Nav isNavOpen={isNavOpen} />
         </div>
+
+        <HandleNav onClick={handleNav} active={isNavOpen}>
+          <List size={24} weight="fill" color="rgba(0, 0, 0, 0.85)" />
+        </HandleNav>
       </div>
     </HeaderContainer>
   )

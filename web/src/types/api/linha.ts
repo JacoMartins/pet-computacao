@@ -4,6 +4,7 @@ export interface linha {
   id: number;
   cod: number;
   nome: string;
+  campus: string;
   valor_inteira: number;
   valor_meia: number;
   tipo: string;

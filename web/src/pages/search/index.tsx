@@ -25,7 +25,7 @@ export default function Search({ linhas, query }) {
   return (
     <>
       <Head>
-        <title>{query} - Pesquisa Moovooca</title>
+        <title>{query ? `${query} - Pesquisa Moovooca` : `Moovooca - Pesquisa`}</title>
         <meta name='description' content='Linhas de Ônibus dos Campus UFC' />
       </Head>
       <Main>
@@ -48,14 +48,14 @@ export default function Search({ linhas, query }) {
                 return (
                   <TableRow key={linha.id} data={{
                     linha:
-                      <button onClick={() => goTo(`/linha?id=${linha.id}&sentido=${linha.sentidos[0].id}`)}>
+                      <button onClick={() => goTo(`/linha?id=${linha.id}&sid=${linha.sentidos[0].id}`)}>
                         <div className='firstContainer'>
                           <span><Bus size={18} color="#2f855a" weight="bold" />{linha.cod}</span>
                           {linha.nome}
                         </div>
                         <div className='lastContainer'>
                           <span>Passa próximo de</span>
-                          <a> </a>
+                          <a>{linha.campus}</a>
                         </div>
                       </button>,
                   }} />
@@ -72,11 +72,11 @@ export default function Search({ linhas, query }) {
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const query = context.query.query || '';
 
-  const { data: linha } = await api.get(`/search_linha?query=${query}`);
+  const { data: linhas } = await api.get(`/linhas/search?query=${query}`);
 
   return {
     props: {
-      linhas: linha.data || [],
+      linhas,
       query
     }
   }

@@ -24,13 +24,13 @@ export const NavContainer = styled('nav', {
     position: 'absolute',
     top: '4.75rem',
     left: 0,
-    width: 'calc(100vw - 5.5rem)',
+    width: 'calc(100vw - 3rem)',
     height: 'calc(100vh - 4.75rem)',
     backgroundColor: '$white',
     flexDirection: 'column',
     justifyContent: 'left',
     gap: '1rem',
-    padding: '0 2.5rem',
+    padding: '0 1.5rem',
   },
 
   ul: {

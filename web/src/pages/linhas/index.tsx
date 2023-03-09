@@ -13,7 +13,7 @@ import { int } from '../../utils/convert'
 import { useState } from 'react'
 import Head from 'next/head'
 
-export default function Linhas({ linhas, page, page_count }) {
+export default function Linhas({ linhas, page }) {
   const router = useRouter()
   const [searchInput, setSearchInput] = useState<string>('')
 
@@ -48,14 +48,14 @@ export default function Linhas({ linhas, page, page_count }) {
                 return (
                   <TableRow key={linha.id} data={{
                     linha:
-                      <button onClick={() => goTo(`/linha?id=${linha.id}&sentido=${linha.sentidos[0].id}`)}>
+                      <button onClick={() => goTo(`/linha?id=${linha.id}&sid=${linha.sentidos[0].id}`)}>
                         <div className='firstContainer'>
                           <span><Bus size={18} color="#2f855a" weight="bold" />{linha.cod}</span>
                           {linha.nome}
                         </div>
                         <div className='lastContainer'>
                           <span>Passa próximo de</span>
-                          <a> </a>
+                          <a>{linha.campus}</a>
                         </div>
                       </button>,
                   }} />
@@ -64,13 +64,13 @@ export default function Linhas({ linhas, page, page_count }) {
               <TableRow data={{
                 info:
                   <div className='pagination'>
-                    <span>Página {page} de {page_count}</span>
+                    <span>Página {page} de {'0'}</span>
                     <div className='buttonContainer'>
                       <button onClick={() => goTo(`/linhas?page=${int(page) - 1}`)} disabled={!(page > 1)}>
                         <CaretLeft size={18} color={page > 1 ? '#276749' : 'rgba(0, 0, 0, 0.25)'} weight="bold" />
                       </button>
-                      <button onClick={() => goTo(`/linhas?page=${int(page) + 1}`)} disabled={!(page < page_count)}>
-                        <CaretRight size={18} color={page < page_count ? '#276749' : 'rgba(0, 0, 0, 0.25)'} weight="bold" />
+                      <button onClick={() => goTo(`/linhas?page=${int(page) + 1}`)} disabled={!(page < 0)}>
+                        <CaretRight size={18} color={page < 0 ? '#276749' : 'rgba(0, 0, 0, 0.25)'} weight="bold" />
                       </button>
                     </div>
                   </div>
@@ -86,16 +86,15 @@ export default function Linhas({ linhas, page, page_count }) {
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const page = context.query.page || 1;
 
-  const { data: linha } = await api.get(`/linha_sentidos?page=${page}`);
-  const { data: contagem_linhas } = await api.get(`/linha_count`);
+  const { data: linhas } = await api.get(`/linhas`);
+  // const { data: contagem_linhas } = await api.get(`/linha_count`);
 
-  const page_count = Math.ceil(int(contagem_linhas) / 15);
+  // const page_count = Math.ceil(int(contagem_linhas) / 15);
 
   return {
     props: {
-      linhas: linha.data,
+      linhas,
       page,
-      page_count,
     }
   }
 }

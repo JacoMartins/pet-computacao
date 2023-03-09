@@ -1,0 +1,10 @@
+flask
+flask-smorest
+python-dotenv
+sqlalchemy
+flask-sqlalchemy
+flask-msearch
+flask-cors
+marshmallow
+bcrypt
+flask-jwt-extended

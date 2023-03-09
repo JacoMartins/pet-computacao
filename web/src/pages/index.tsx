@@ -67,11 +67,11 @@ export default function Home({ linhas }) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const { data: linha } = await api.get(`/linha_sentidos?page=1`);
+  const { data: linha } = await api.get(`/linhas`);
 
   return {
     props: {
-      linhas: linha.data
+      linhas: linha
     }
   }
 }

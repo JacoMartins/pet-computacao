@@ -1,12 +1,15 @@
 import { useRouter } from "next/router";
 import { Bus, CircleNotch } from "phosphor-react";
-import { useState } from "react";
+import { FormEvent, useContext, useState } from "react";
+import { AuthContext } from "../../contexts/AuthContext";
 import { api } from "../../services/api";
 import { Logo } from "../../styles/pages/criar";
 import { Main } from "../../styles/pages/criar";
 
-export default function CreateAccount() {
+export default function Entrar() {
   const router = useRouter();
+
+  const { auth, reload } = useContext(AuthContext);
 
   const [identificador, setIdentificador] = useState<string>('');
   const [senha, setSenha] = useState<string>('');
@@ -15,21 +18,36 @@ export default function CreateAccount() {
 
   const [error, setError] = useState<string>();
 
-  function goTo(path:string){
+  function goTo(path: string) {
     router.push(path)
+  }
+
+  async function authenticate(event: FormEvent) {
+    event.preventDefault();
+    
+    const credenciais = {
+      identificador,
+      senha
+    };
+
+    setBusy(true);
+
+    await auth(credenciais);
+
+    setBusy(false);
   }
 
   return (
     <Main>
       <div className='formContainer'>
-        <Logo>
+        <Logo onClick={() => goTo('/')}>
           <Bus size={24} weight="regular" color="#276749" />
           <span>
             moovooca
           </span>
         </Logo>
         <h4>Entrar</h4>
-        <form onSubmit={() => console.log('bababoi')}>
+        <form onSubmit={authenticate}>
           <input type="text" placeholder="Nome de usuário ou email" onChange={event => setIdentificador(event.target.value)} />
           <input type="password" placeholder="Senha" onChange={event => setSenha(event.target.value)} />
 

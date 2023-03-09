@@ -1,539 +1,122 @@
-from flask import Flask, request as req, jsonify, make_response as res
-from flask_cors import CORS, cross_origin
-from datetime import datetime
-from utils.response_message import response_message
-from utils.strip_accents import strip_accents
-import bcrypt
+import os
 
-from database.db import simple
+from db import db
 
-simple.setup()
-salt = bcrypt.gensalt()
+from flask import Flask, jsonify
+from flask_smorest import Api
+from flask_msearch import Search
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
-app = Flask(__name__)
+from models import UsuarioModel
 
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+from resources.linha import blp as LinhaBlueprint
+from resources.parada import blp as ParadaBlueprint
+from resources.reserva import blp as ReservaBlueprint
+from resources.sentido import blp as SentidoBlueprint
+from resources.usuario import blp as UsuarioBlueprint
+from resources.viagem import blp as ViagemBlueprint
 
-@app.route("/")
-def index():
-  return "Bem-vindo ao sistema de reservas de linha de ônibus do Câmpus UFC."
+from datetime import timedelta
 
-# Linhas
+from blocklist import BLOCKLIST
 
-@app.route("/linha", methods=['GET'])
-def get_linha():
-  if req.args.get('id'):
-    result = simple.linha.get_one(where={
-      'field': 'id',
-      'operator': '=',
-      'value': req.args.get('id')
-    })
+def create_app(db_url=None):
+  app = Flask(__name__)
 
-    return res(jsonify(result), result['status'])
-    
-  result = simple.linha.get_all()
+  app.config['PROPAGATE_EXCEPTIONS'] = True
 
-  return res(jsonify(result), result['status'])
+  app.config['API_TITLE'] = "Moovooca API - Python Flask"
+  app.config['API_VERSION'] = "v1"
 
-@app.route("/linha_sentidos", methods=['GET'])
-def get_linha_sentidos():
-  if(req.args.get('page')):
-    result = simple.linha.get_many(pagination={
-      'page': req.args.get('page'),
-      'limit': 15
-    })
+  app.config["OPENAPI_VERSION"] = "3.0.3"
+  app.config["OPENAPI_URL_PREFIX"] = "/"
+  app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
+  app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
-    if result['data']:
-      for linha in result['data']:
-        linha['sentidos'] = simple.sentido.get_many(where={
-          'field': 'id_linha',
-          'operator': '=',
-          'value': linha['id']
-        })['data']
-  else:
-    result = simple.linha.get_all()
+  app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db")
+  app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    if result['data']:
-      for linha in result['data']:
-        linha['sentidos'] = simple.sentido.get_many(where={
-          'field': 'id_linha',
-          'operator': '=',
-          'value': linha['id']
-        })['data']
+  app.config['MSEARCH_INDEX_NAME'] = os.path.join(app.root_path, 'msearch')
+  app.config['MSEARCH_PRIMARY_KEY'] = 'id'
+  app.config['MSEARCH_ENABLE'] = True
 
-  return res(jsonify(result), result['status'])
+  app.config['CORS_HEADERS'] = 'Content-Type'
 
-@app.route("/search_linha", methods=['GET'])
-def get_search_linha():
-  query, page = req.args.get('query'), req.args.get('page')
-
-  if query and page:
-    result = simple.linha.get_many(where={
-      "OR": [
-        {
-          'field': 'nome',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        },
-
-        {
-          'field': 'cod',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        },
-
-        {
-          'field': 'tipo',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        }
-      ]
-    }, pagination={
-      'page': req.args.get('page'),
-      'limit': 15
-    })
-
-    try: 
-      if result['data']:
-        for linha in result['data']:
-          linha['sentidos'] = simple.sentido.get_many(where={
-            'field': 'id_linha',
-            'operator': '=',
-            'value': linha['id']
-          })['data']
-    except KeyError as e:
-      result = response_message(status=200, message="Nenhuma linha encontrada.", data=[]).get_dict()
-      
-  else:
-    result = simple.linha.get_many(where={
-      "OR": [
-        {
-          'field': 'nome',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        },
-
-        {
-          'field': 'cod',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        },
-
-        {
-          'field': 'tipo',
-          'operator': 'LIKE',
-          'value': f'%{req.args.get("query")}%'
-        }
-      ]
-    })
-    
-    try:
-      if result['data']:
-        for linha in result['data']:
-          linha['sentidos'] = simple.sentido.get_many(where={
-            'field': 'id_linha',
-            'operator': '=',
-            'value': linha['id']
-          })['data']
-    except KeyError as e:
-      result = response_message(status=200, message="Nenhuma linha encontrada.", data=[]).get_dict()
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/linha_count", methods=['GET'])
-def get_linha_count():
-  result = simple.linha.select_all(count='*')[0][0]
-
-  return res(jsonify(result))
-
-@app.route("/linha", methods=['POST'])
-def post_linha():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.linha.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/linha", methods=['PUT'])
-def put_linha():
-  id = req.args.get('id')
-  data = req.get_json()
-
-  data['criado_em'] = simple.linha.get_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })['data']['criado_em']
-
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.linha.update_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  }, data=data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/linha", methods=['DELETE'])
-def delete_linha():
-  id = req.args.get('id')
-
-  result = simple.linha.delete_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })
-
-  return res(jsonify(result), result['status'])
-
-# Viagens
-
-@app.route('/viagem', methods=['GET'])
-def get_viagem():
-  if req.args.get('id'):
-    result = simple.viagem.get_one(where={
-      'field': 'id',
-      'operator': '=',
-      'value': req.args.get('id')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  elif req.args.get('linha'):
-    result = simple.viagem.get_many(where={
-      'field': 'id_linha',
-      'operator': '=',
-      'value': req.args.get('linha')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  elif req.args.get('sentido'):
-    result = simple.viagem.get_many(where={
-      'field': 'id_sentido',
-      'operator': '=',
-      'value': req.args.get('sentido')
-    })
-
-    return res(jsonify(result), result['status'])
+  app.config["JWT_COOKIE_SECURE"] = True
+  app.config['JWT_SECRET_KEY'] = os.getenv("SECRET_KEY")
+  app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=12)
   
-  elif req.args.get('linha') and req.args.get('sentido'):
-    result = simple.viagem.get_many(where={
-      'AND': [
-        {
-          'field': 'id_linha',
-          'operator': '=',
-          'value': req.args.get('linha')
-        },
-        {
-          'field': 'id_sentido',
-          'operator': '=',
-          'value': req.args.get('sentido')
-        }
-      ]
-    })
+  db.init_app(app)
 
-    return res(jsonify(result), result['status'])
+  api = Api(app)
+  search = Search(app)
+  cors = CORS(app)
+  
+  search.init_app(app)
+
+  jwt = JWTManager(app)
+
+  @jwt.token_in_blocklist_loader
+  def check_if_token_in_blocklist(jwt_header, jwt_payload):
+    return jwt_payload["jti"] in BLOCKLIST
+  
+  @jwt.revoked_token_loader
+  def revoked_token_callback(jwt_header, jwt_payload):
+    return(
+      jsonify(
+        {"description": "The token has been revoked.", "error": "token_revoked"}
+      ), 401
+    )
+
+  @jwt.additional_claims_loader
+  def add_claims_to_jwt(identity):
+    usuario = UsuarioModel.query.filter(UsuarioModel.id == identity).first()
     
-  result = simple.viagem.get_all()
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/viagem", methods=['POST'])
-def post_viagem():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.viagem.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/viagem", methods=['PUT'])
-def put_viagem():
-  id = req.args.get('id')
-  data = req.get_json()
-
-  data['criado_em'] = simple.viagem.get_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })['data']['criado_em']
-
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.viagem.update_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  }, data=data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/viagem", methods=['DELETE'])
-def delete_viagem():
-  id = req.args.get('id')
-
-  result = simple.viagem.delete_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })
-
-  return res(jsonify(result), result['status'])
-
-# Paradas
-
-@app.route('/parada', methods=['GET'])
-def get_parada():
-  if req.args.get('id'):
-    result = simple.parada.get_one(where={
-      'field': 'id',
-      'operator': '=',
-      'value': req.args.get('id')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  if req.args.get('linha') and req.args.get('sentido'):
-    result = simple.parada.get_many(where={
-      'AND': [
-        {
-          'field': 'id_linha',
-          'operator': '=',
-          'value': req.args.get('linha')
-        },
-        {
-          'field': 'id_sentido',
-          'operator': '=',
-          'value': req.args.get('sentido')
-        }
-      ]
-    })
-
-    return res(jsonify(result), result['status'])
-
-  elif req.args.get('sentido'):
-    result = simple.parada.get_one(where={
-      'field': 'id_sentido',
-      'operator': '=',
-      'value': req.args.get('sentido')
-    })
-
-    return res(jsonify(result), result['status'])
-    
-  result = simple.parada.get_all()
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/parada", methods=['POST'])
-def post_parada():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.parada.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/parada", methods=['PUT'])
-def put_parada():
-  id = req.args.get('id')
-  data = req.get_json()
-
-  data['criado_em'] = simple.parada.get_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })['data']['criado_em']
-
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.parada.update_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  }, data=data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/parada", methods=['DELETE'])
-def delete_parada():
-  id = req.args.get('id')
-
-  result = simple.parada.delete_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })
-
-  return res(jsonify(result), result['status'])
-
-@app.route('/reserva', methods=['GET'])
-def get_reserva():
-  if req.args.get('id'):
-    result = simple.reserva.get_one(where={
-      'field': 'id',
-      'operator': '=',
-      'value': req.args.get('id')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  elif req.args.get('usuario'):
-    result = simple.reserva.get_one(where={
-      'field': 'id_usuario',
-      'operator': '=',
-      'value': req.args.get('usuario')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  elif req.args.get('viagem'):
-    result = simple.reserva.get_one(where={
-      'field': 'id_sentido',
-      'operator': '=',
-      'value': req.args.get('viagem')
-    })
-
-    return res(jsonify(result), result['status'])
-    
-  result = simple.parada.get_all()
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/reserva", methods=['POST'])
-def post_reserva():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.reserva.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/reserva", methods=['PUT'])
-def put_reserva():
-  id = req.args.get('id')
-  data = req.get_json()
-
-  data['criado_em'] = simple.reserva.get_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })['data']['criado_em']
-
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.reserva.update_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  }, data=data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/reserva", methods=['DELETE'])
-def delete_reserva():
-  id = req.args.get('id')
-
-  result = simple.reserva.delete_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })
-
-  return res(jsonify(result), result['status'])
-
-# Sentido
-@app.route('/sentido', methods=['GET'])
-def get_sentido():
-  if req.args.get('id'):
-    result = simple.sentido.get_one(where={
-      'field': 'id',
-      'operator': '=',
-      'value': req.args.get('id')
-    })
-
-    return res(jsonify(result), result['status'])
-
-  if req.args.get('linha'):
-    result = simple.sentido.get_many(where={
-      'field': 'id_linha',
-      'operator': '=',
-      'value': req.args.get('linha')
-    })
-
-    return res(jsonify(result), result['status'])
-    
-  result = simple.sentido.get_all()
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/sentido", methods=['POST'])
-def post_sentido():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.sentido.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/sentido", methods=['PUT'])
-def put_sentido():
-  id = req.args.get('id')
-  data = req.get_json()
-
-  data['criado_em'] = simple.sentido.get_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })['data']['criado_em']
-
-  data['atualizado_em'] = datetime.now().isoformat()
-
-  result = simple.sentido.update_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  }, data=data)
-
-  return res(jsonify(result), result['status'])
-
-@app.route("/sentido", methods=['DELETE'])
-def delete_sentido():
-  id = req.args.get('id')
-
-  result = simple.sentido.delete_one(where={
-    'field': 'id',
-    'operator': '=',
-    'value': id
-  })
-
-  return res(jsonify(result), result['status'])
-
-# Usuário
-
-@app.route('/usuario', methods=['POST'])
-def post_usuario():
-  data = req.get_json()
-  data['criado_em'] = datetime.now().isoformat()
-  data['atualizado_em'] = datetime.now().isoformat()
-  data['admin'] = 0
-
-  bytePassword = data['senha'].encode('utf-8')
-  hashPassword = bcrypt.hashpw(bytePassword, salt)
-
-  data['senha'] = hashPassword.decode('utf-8')
-
-  result = simple.usuario.insert(**data)
-
-  return res(jsonify(result), result['status'])
-
-if __name__ == "__main__":
-  app.run(debug=True, host="0.0.0.0")
+    if usuario.admin == 0:
+      return {"admin": False}
+    else:
+      return {"admin": True}
+
+  @jwt.expired_token_loader
+  def expired_token_callback(jwt_header, jwt_payload):
+    return(
+      jsonify({"message": "The token has expired.", "error": "token_expired"}),
+      401
+    )
+  
+  @jwt.invalid_token_loader
+  def invalid_token_callback(error):
+    return(
+      jsonify({"message": "Signature verification invalid.", "error": "invalid_token"}),
+      401
+    )
+  
+  @jwt.unauthorized_loader
+  def missing_token_callback(error):
+    return(
+      jsonify({"message": "Request does not contain an access token.",  "error": "authorization_required"}),
+      401
+    )
+  
+  @jwt.needs_fresh_token_loader
+  def token_not_fresh_callback(jwt_header, jwt_payload):
+    return(
+      jsonify({
+        "description": "The token is not fresh.",
+        "error": "fresh_token_required"
+      }), 401
+    )
+
+  @app.before_first_request
+  def create_tables():
+    db.create_all()
+
+  api.register_blueprint(LinhaBlueprint)
+  api.register_blueprint(ParadaBlueprint)
+  api.register_blueprint(ReservaBlueprint)
+  api.register_blueprint(SentidoBlueprint)
+  api.register_blueprint(UsuarioBlueprint)
+  api.register_blueprint(ViagemBlueprint)
+
+  return app

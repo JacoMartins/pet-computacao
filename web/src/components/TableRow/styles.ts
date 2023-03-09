@@ -62,6 +62,7 @@ export const Main = styled('tr', {
       width: '100%',
       gap: '0.5rem',
       fontSize: '1.125rem',
+      background: 'rgba(0,0,0, 0.025)',
 
       '@media screen and (max-width: 768px)': {
         display: 'flex',

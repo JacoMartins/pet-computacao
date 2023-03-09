@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import Header from "../../components/Header";
 import { api } from "../../services/api";
 import { BodyContainer, Main, StopContainer } from "../../styles/pages/linha";
-import { ArrowUpRight, Bus, CaretDown } from "phosphor-react";
+import { ArrowUpRight, Bus, CaretDown, MapPin } from "phosphor-react";
 import GoogleMapReact from 'google-map-react';
 import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
 import { Footer } from "../../styles/global";
@@ -58,7 +58,7 @@ export default function Linha({ linha, sentido, sentidos, paradas }: LinhaProps)
                     <DropdownMenu.Arrow className="DropdownMenuArrow" />
 
                     {sentidos.map((sentido: sentido) => (
-                      <DropdownMenu.Item className="DropdownMenuItem" key={sentido.id} onClick={() => goTo(`/linha?id=${linha.id}&sentido=${sentido.id}`)}>
+                      <DropdownMenu.Item className="DropdownMenuItem" key={sentido.id} onClick={() => goTo(`/linha?id=${linha.id}&sid=${sentido.id}`)}>
                         <DropdownMenu.Item className="DropdownMenuItemIndicator" asChild={false}>
                           <ArrowUpRight size={14} weight="bold" color="rgba(0, 0, 0, 0.8)" />
                         </DropdownMenu.Item>
@@ -78,9 +78,19 @@ export default function Linha({ linha, sentido, sentidos, paradas }: LinhaProps)
             <div className="lineContainer">
               <div className="infoContainer">
                 <h3>Informações</h3>
-                <p>A linha {linha.cod} - {linha.nome} de ônibus tem {paradas.length} paradas partindo de {sentido.ponto_partida} e terminando em {sentido.ponto_destino}.</p>
+                <div className="stopsNearContainer">
+                  <div className="iconContainer">
+                    <MapPin size={16} weight="fill" color="#2f855a" />
+                  </div>
+                  
+                  <div className="stopsNearText">
+                    <span>Para próximo de: </span>
+                    <span>{linha.campus}</span>
+                  </div>
+                </div>
+                <p>A linha {linha.cod} - {linha.nome} de ônibus tem {paradas.length} paradas partindo de {sentido.ponto_partida}, terminando em {sentido.ponto_destino}.</p>
                 <p>A grade horária da linha {linha.cod} {linha.nome} de ônibus para a próxima semana: Começa a operar às {sentido.horario_inicio} e termina às {sentido.horario_fim}. Dias de operação durante a semana: todos os dias.</p>
-              
+
                 <StopContainer>
                   <div className="stopsHeaderContainer">
                     <h3>Sentido {sentido.sentido} ({paradas.length} paradas)</h3>
@@ -112,20 +122,19 @@ export default function Linha({ linha, sentido, sentidos, paradas }: LinhaProps)
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const { id, sentido } = context.query;
+  const { id, sid } = context.query;
 
   const { data: linha } = await api.get(`/linha?id=${id}`);
-  const { data: sentidoObj } = await api.get(`/sentido?id=${sentido}`);
-  const { data: paradas } = await api.get(`/parada?linha=${linha.data.id}&sentido=${sentido}`);
-  const { data: sentidos } = await api.get(`/sentido?linha=${linha.data.id}`);
+  const { data: sentido } = await api.get(`/sentido?id=${sid}`);
+  const { data: sentidos } = await api.get(`/sentidos?linha=${linha.id}`);
 
   return {
     props: {
       id,
-      linha: linha.data,
-      sentido: sentidoObj.data,
-      sentidos: sentidos.data,
-      paradas: paradas.data ? paradas.data : []
+      linha: linha,
+      sentido: sentido,
+      sentidos: sentidos,
+      paradas: sentido.paradas
     }
   }
 }

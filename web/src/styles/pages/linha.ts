@@ -9,7 +9,7 @@ export const Main = styled('main', {
   justifyContent: 'center',
   alignItems: 'center',
   background: 'transparent',
-  padding: '6.5rem 2.5rem'
+  padding: '6rem 1.5rem'
 });
 
 export const BodyContainer = styled('div', {
@@ -100,6 +100,45 @@ export const BodyContainer = styled('div', {
   },
 
   '.mainContainer': {
+    '.stopsNearContainer': {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: '0.5rem',
+
+      '@media screen and (max-width: 768px)': {
+        fontSize: '0.875rem',
+      },
+
+      '.stopsNearText': {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.125rem',
+
+        'span:first-child': {
+          fontWeight: 500,
+          lineHeight: '1rem',
+        }
+      },
+
+      '.iconContainer': {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: '50%',
+        padding: '0.375rem',
+        height: '1rem',
+        width: '1rem',
+        background: '$green_200',
+
+        '@media screen and (max-width: 768px)': {
+          height: '0.875rem',
+          width: '0.875rem'
+        },
+      },
+    },
+    
     '.lineContainer': {
       display: 'flex',
       flexDirection: 'row',

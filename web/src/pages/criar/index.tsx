@@ -10,6 +10,7 @@ export default function CreateAccount() {
 
   const [nome_usuario, setNome_usuario] = useState<string>('');
   const [nome, setNome] = useState<string>('');
+  const [sobrenome, setSobrenome] = useState<string>('');
   const [email, setEmail] = useState<string>('')
   const [senha, setSenha] = useState<string>('');
   const [confirmarSenha, setConfirmarSenha] = useState<string>('');
@@ -38,7 +39,7 @@ export default function CreateAccount() {
       return;
     }
 
-    if (!nome_usuario || !nome || !email || !senha || !confirmarSenha) {
+    if (!nome_usuario || !nome || !sobrenome || !email || !senha || !confirmarSenha) {
       setError('Por favor, preencha todos os campos!');
       return;
     }
@@ -50,15 +51,17 @@ export default function CreateAccount() {
   async function createAccount() {
     setBusy(true);
     try {
-      await api.post('http://192.168.1.7:5000/usuario', {
+      await api.post('/usuario', {
         nome_usuario,
         nome,
+        sobrenome,
         senha,
         email,
       })
 
       goTo('/')
     } catch (error) {
+      console.log(error)
       setError('Houve um erro na requisição.')
     }
 
@@ -68,7 +71,7 @@ export default function CreateAccount() {
   return (
     <Main>
       <div className='formContainer'>
-        <Logo>
+        <Logo onClick={() =>  goTo('/')}>
           <Bus size={24} weight="regular" color="#276749" />
           <span>
             moovooca
@@ -78,6 +81,7 @@ export default function CreateAccount() {
         <form onSubmit={() => checkForm(createAccount)}>
           <input type="text" placeholder="Nome de usuário" onChange={event => setNome_usuario(event.target.value)} />
           <input type="text" placeholder="Nome" onChange={event => setNome(event.target.value)} />
+          <input type="text" placeholder="Sobrenome" onChange={event => setSobrenome(event.target.value)} />
           <input type="email" placeholder="Email" onChange={event => setEmail(event.target.value)} />
 
           <input type="password" placeholder="Senha" onChange={event => setSenha(event.target.value)} />

@@ -9,7 +9,7 @@ export const Main = styled('main', {
   justifyContent: 'center',
   alignItems: 'center',
   background: 'transparent',
-  padding: '6.5rem 2.5rem'
+  padding: '6rem 1.5rem'
 });
 
 export const BodyContainer = styled('div', {
