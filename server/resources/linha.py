@@ -1,7 +1,7 @@
 from flask import request as req
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
@@ -52,15 +52,20 @@ class Linha(MethodView):
   @blp.arguments(LinhaSchema)
   @blp.response(201, LinhaSchema)
   def post(self, linha_data):
-    linha = LinhaModel(**linha_data)
+    usuario_admin = get_jwt()["admin"]
+    
+    if usuario_admin:
+      linha = LinhaModel(**linha_data)
 
-    try:
-      db.session.add(linha)
-      db.session.commit()
-    except SQLAlchemyError:
-      abort(500, "An error ocurred while inserting item to table 'linha'.")
+      try:
+        db.session.add(linha)
+        db.session.commit()
+      except SQLAlchemyError:
+        abort(500, "An error ocurred while inserting item to table 'linha'.")
 
-    return linha
+      return linha
+    
+    abort(401, "Unauthorized access.")
 
   @jwt_required()
   @blp.arguments(LinhaSchema)
