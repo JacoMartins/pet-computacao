@@ -8,7 +8,6 @@ class PlainUsuarioSchema(Schema):
   sobrenome = fields.Str(required=True)
   senha = fields.Str(load_only=True)
   email = fields.Str(required=True)
-  admin = fields.Int()
   criado_em = fields.DateTime()
   atualizado_em = fields.DateTime()
 
@@ -32,7 +31,7 @@ class PlainViagemSchema(Schema):
 
 class ReservaSchema(Schema):
   id_viagem = fields.Int(required=True)
-  id_usuario = fields.Int(required=True)
+  id_usuario = fields.Int()
   assento = fields.Int(required=True)
   forma_pagamento = fields.Str(required=True)
   criado_em = fields.DateTime()
@@ -158,7 +157,6 @@ class ViagemSchema(Schema):
   pago_meia = fields.Int(required=True)
   gratuidade = fields.Int(required=True)
   assentos_disponiveis = fields.Int(required=True)
-  assentos_ocupados = fields.Int(required=True)
   criado_em = fields.DateTime()
   atualizado_em = fields.DateTime()
 

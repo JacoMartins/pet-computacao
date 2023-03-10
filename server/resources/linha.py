@@ -4,7 +4,6 @@ from flask_smorest import Blueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
 
 from datetime import datetime
 
@@ -71,39 +70,48 @@ class Linha(MethodView):
   @blp.arguments(LinhaSchema)
   @blp.response(200, LinhaSchema)
   def put(self, linha_data):
-    linha_id = req.args.get('id')
-    linha = LinhaModel.query.get(linha_id)
+    usuario_admin = get_jwt()["admin"]
+    
+    if usuario_admin:
+      linha_id = req.args.get('id')
+      linha = LinhaModel.query.get(linha_id)
 
-    if linha:
-      linha.cod = linha_data["cod"]
-      linha.nome = linha_data["nome"]
-      linha.campus = linha_data["campus"]
-      linha.valor_inteira = linha_data["valor_inteira"]
-      linha.valor_meia = linha_data["valor_meia"]
-      linha.tipo = linha_data["tipo"]
-      linha.capacidade_assento = linha_data["capacidade_assento"]
-      linha.atualizado_em = datetime.utcnow()
-    else:
-      linha = LinhaModel(id=linha_id, **linha_data)
+      if linha:
+        linha.cod = linha_data["cod"]
+        linha.nome = linha_data["nome"]
+        linha.campus = linha_data["campus"]
+        linha.valor_inteira = linha_data["valor_inteira"]
+        linha.valor_meia = linha_data["valor_meia"]
+        linha.tipo = linha_data["tipo"]
+        linha.capacidade_assento = linha_data["capacidade_assento"]
+        linha.atualizado_em = datetime.utcnow()
+      else:
+        linha = LinhaModel(id=linha_id, **linha_data)
 
-    try:
-      db.session.add(linha)
-      db.session.commit()
-    except SQLAlchemyError:
-      abort(500, "An error ocurred while updating item in table 'linha'.")
+      try:
+        db.session.add(linha)
+        db.session.commit()
+      except SQLAlchemyError:
+        abort(500, "An error ocurred while updating item in table 'linha'.")
 
-    return linha
+      return linha
+    abort(401, "Unauthorized access.")
   
   @jwt_required()
   @blp.response(204)
   def delete(self):
-    linha_id = req.args.get('id')
-    linha = LinhaModel.query.get(linha_id)
-
-    if linha:
-      db.session.delete(linha)
-      db.session.commit()
-    else:
-      abort(404, "Item not found in table 'linha'.")
+    usuario_admin = get_jwt()["admin"]
     
-    return {"message": "Linha excluida."}
+    if usuario_admin:
+      linha_id = req.args.get('id')
+      linha = LinhaModel.query.get(linha_id)
+
+      if linha:
+        db.session.delete(linha)
+        db.session.commit()
+      else:
+        abort(404, "Item not found in table 'linha'.")
+      
+      return {"message": "Linha excluida."}
+    
+    abort(401, "Unauthorized access.")
