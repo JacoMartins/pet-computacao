@@ -114,7 +114,7 @@ export const globalStyles = globalCss({
     alignItems: 'center',
     backgroundColor: '$black_50',
     color: '$black_800',
-    border: 'solid 1px transparent',
+    border: 'solid 1px $black_50',
     borderRadius: '0.375rem',
     padding: '0.5rem 0.5rem',
     fontSize: '1rem',
@@ -128,7 +128,7 @@ export const globalStyles = globalCss({
     },
 
     '&:active': {
-      border: 'solid 1px $black_100',
+      border: 'solid 1px $black_150',
       transition: 'all 0.15s ease-in-out',
     }
   },

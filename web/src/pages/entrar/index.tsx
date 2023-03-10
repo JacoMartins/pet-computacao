@@ -2,9 +2,7 @@ import { useRouter } from "next/router";
 import { Bus, CircleNotch } from "phosphor-react";
 import { FormEvent, useContext, useState } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
-import { api } from "../../services/api";
-import { Logo } from "../../styles/pages/criar";
-import { Main } from "../../styles/pages/criar";
+import { Logo, Main } from "../../styles/pages/entrar";
 
 export default function Entrar() {
   const router = useRouter();

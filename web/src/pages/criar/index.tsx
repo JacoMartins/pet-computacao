@@ -2,8 +2,7 @@ import { useRouter } from "next/router";
 import { Bus, CircleNotch } from "phosphor-react";
 import { useState } from "react";
 import { api } from "../../services/api";
-import { Logo } from "../../styles/pages/criar";
-import { Main } from "../../styles/pages/criar";
+import { Logo, Main } from "../../styles/pages/criar";
 
 export default function CreateAccount() {
   const router = useRouter();

@@ -1,1 +1,3 @@
-.flaskenv
+# python flask
+./server/.flaskenv
+./server/.venv
