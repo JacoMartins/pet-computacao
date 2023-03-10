@@ -7,13 +7,13 @@ import GoogleMapReact from 'google-map-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { sentido } from "../../types/api/sentido";
 import { GetServerSidePropsContext } from "next";
-import { LinhaProps } from "../../types/pages/Linha";
+import { HorarioProps } from "../../types/pages/Horario";
 import Head from "next/head";
 import Table from "../../components/Table";
 import { viagem } from "../../types/api/viagem";
 import TableRow from "../../components/TableRow";
 
-export default function Linha({ linha, sentido, sentidos, viagens }: LinhaProps) {
+export default function Horario({ linha, sentido, sentidos, viagens }: HorarioProps) {
   const router = useRouter()
 
   function goTo(path: string) {
